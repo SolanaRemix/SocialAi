@@ -23,7 +23,7 @@ flowchart TD
 
     subgraph Backend["One‑File SocialAi Node"]
         C1[Healdec Engine]
-        C2[Worker Orchestrator]
+        C2[Worker Manager]
         C3[API Gateway]
         C4[SmartBrain Integration]
     end
@@ -59,7 +59,7 @@ flowchart TD
 
 ## Backend Architecture (Detailed)
 
-The following diagram provides a detailed view of the One-File SocialAi Node backend architecture:
+The following diagram provides a detailed view of the One‑File SocialAi Node backend architecture:
 
 ```mermaid
 flowchart TD
@@ -127,13 +127,13 @@ Administrative interface for system management and monitoring:
 ### Backend (One‑File SocialAi Node)
 Core backend service powered by Healdec:
 - **Healdec Engine**: Auto-healing orchestration engine
-- **Worker Orchestrator**: Manages parallel workers
+- **Worker Manager**: Manages parallel workers
 - **API Gateway**: Request routing and handling
 - **SmartBrain Integration**: AI-powered features integration
 
 #### Detailed Backend Components
 
-**socialai.node.js (One-File Orchestrator)**
+**socialai.node.js (One‑File Orchestrator)**
 The central orchestrator that coordinates all backend subsystems in a single file.
 
 **Healdec Engine**
