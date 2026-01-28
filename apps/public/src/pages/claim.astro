@@ -377,6 +377,11 @@ const description = 'Verify your identity and claim your SocialAi profile throug
             showAlert('Please enter your wallet address', 'error');
             return;
           }
+          // Validate Ethereum address format
+          if (!/^0x[a-fA-F0-9]{40}$/.test(address) && !/\.eth$/.test(address)) {
+            showAlert('Please enter a valid Ethereum address (0x...) or ENS name', 'error');
+            return;
+          }
           endpoint = `${API_URL}/api/auth/siwe`;
           body = { address };
         }
@@ -390,7 +395,13 @@ const description = 'Verify your identity and claim your SocialAi profile throug
         });
 
         if (response.ok) {
-          const data = await response.json();
+          let data;
+          try {
+            data = await response.json();
+          } catch (parseError) {
+            showAlert('Invalid response from server. Please try again.', 'error');
+            return;
+          }
           showAlert('Verification successful! Redirecting...', 'success');
           
           setTimeout(() => {
@@ -401,12 +412,22 @@ const description = 'Verify your identity and claim your SocialAi profile throug
             }
           }, 1500);
         } else {
-          const error = await response.json();
-          showAlert(error.message || 'Verification failed. Please try again.', 'error');
+          let errorMessage = 'Verification failed. Please try again.';
+          try {
+            const error = await response.json();
+            errorMessage = error.message || errorMessage;
+          } catch (e) {
+            // Use default error message if response isn't JSON
+          }
+          showAlert(errorMessage, 'error');
         }
       } catch (error) {
         console.error('Claim error:', error);
-        showAlert('Unable to connect to verification service. Please try again later.', 'error');
+        const isNetworkError = error instanceof TypeError && error.message.includes('fetch');
+        const message = isNetworkError 
+          ? 'Network error: Unable to connect to verification service. Please check your connection.'
+          : 'An unexpected error occurred. Please try again later.';
+        showAlert(message, 'error');
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Continue to Verification';

@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 
+// Return empty array for SSR mode - profiles are dynamically rendered
 export async function getStaticPaths() {
   return [];
 }

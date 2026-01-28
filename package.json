@@ -15,8 +15,7 @@
     "build": "npm run build:public && npm run build:admin",
     "build:public": "cd apps/public && npm run build",
     "build:admin": "cd apps/admin && npm run build",
-    "db:init": "psql -U postgres -f db/schema.sql",
-    "postinstall": "cd apps/public && npm install && cd ../admin && npm install && cd ../../node && npm install && cd ../workers && npm install"
+    "db:init": "psql -U postgres -f db/schema.sql"
   },
   "keywords": [
     "social",

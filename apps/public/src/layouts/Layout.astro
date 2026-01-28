@@ -10,6 +10,7 @@ const { title = 'SocialAi - The Open Social Index' } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
     <meta name="description" content="The Open Social Index & Identity Claim Network" />
+    <slot name="head" />
     <style>
       * {
         margin: 0;
@@ -83,7 +84,7 @@ const { title = 'SocialAi - The Open Social Index' } = Astro.props;
     </main>
     
     <footer>
-      <p>&copy; 2024 SocialAi - The Open Social Index</p>
+      <p>&copy; {new Date().getFullYear()} SocialAi - The Open Social Index</p>
     </footer>
   </body>
 </html>
