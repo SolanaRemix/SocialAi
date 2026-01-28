@@ -122,9 +122,9 @@ flowchart LR
     subgraph Workers["Parallel Workers"]
         W1[Farcaster Worker]
         W2[Reddit Worker]
-        W3[Ethereum RPC Worker]
-        W4[BASE RPC Worker]
-        W5[Solana RPC Worker]
+        W3[Ethereum RPC]
+        W4[BASE RPC]
+        W5[Solana RPC]
         W6[Search Worker]
         W7[AI Worker]
     end
@@ -145,13 +145,15 @@ flowchart LR
     O1 --> W6
     O1 --> W7
 
-    W1 --> DB
-    W2 --> DB
-    W3 --> DB
-    W4 --> DB
-    W5 --> DB
-    W6 --> DB
-    W7 --> DB
+    W1 --> D1
+    W1 --> D2
+    W1 --> D3
+    W2 --> D4
+    W3 --> D1
+    W4 --> D1
+    W5 --> D1
+    W6 --> D5
+    W7 --> D5
 ```
 
 ## Component Descriptions
