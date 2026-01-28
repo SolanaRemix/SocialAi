@@ -108,6 +108,52 @@ flowchart TD
     Root --> SmartBrain
 ```
 
+## Worker Orchestration Architecture
+
+The following diagram shows how the Worker Manager orchestrates parallel workers and their interaction with the database:
+
+```mermaid
+flowchart LR
+
+    subgraph Orchestrator["SocialAi Node"]
+        O1[Worker Manager]
+    end
+
+    subgraph Workers["Parallel Workers"]
+        W1[Farcaster Worker]
+        W2[Reddit Worker]
+        W3[Ethereum RPC Worker]
+        W4[BASE RPC Worker]
+        W5[Solana RPC Worker]
+        W6[Search Worker]
+        W7[AI Worker]
+    end
+
+    subgraph DB["Postgres"]
+        D1[(Users)]
+        D2[(Profiles)]
+        D3[(Posts)]
+        D4[(External Posts)]
+        D5[(Embeddings)]
+    end
+
+    O1 --> W1
+    O1 --> W2
+    O1 --> W3
+    O1 --> W4
+    O1 --> W5
+    O1 --> W6
+    O1 --> W7
+
+    W1 --> DB
+    W2 --> DB
+    W3 --> DB
+    W4 --> DB
+    W5 --> DB
+    W6 --> DB
+    W7 --> DB
+```
+
 ## Component Descriptions
 
 ### Public Layer (Astro + Vite)
