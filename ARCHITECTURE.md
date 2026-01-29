@@ -1,250 +1,650 @@
 # SocialAi Architecture
 
-This document provides a visual representation of the SocialAi application architecture, showing the key components and their relationships.
+**Version 1.0**
 
-## System Architecture Flowchart
+The SocialAi system is a lightweight, AI‑powered social discovery and identity claim network built on a **parallel, auto‑healing, one‑file node architecture** powered by Healdec and SmartBrain.
 
-```mermaid
-flowchart TD
+This document is the canonical architecture reference for the repository. It describes:
 
-    subgraph PublicLayer["Public Layer (Astro + Vite)"]
-        A1[SEO Pages]
-        A2[Profiles]
-        A3[Timelines]
-        A4[Claim Flow]
-    end
+- High‑level system topology
+- Core components and their responsibilities
+- Data model and flows
+- Worker orchestration
+- Security and operational concerns
+- Future extension plans
 
-    subgraph AdminLayer["Admin Layer (Angular)"]
-        B1[Feature Flags]
-        B2[Sync Controls]
-        B3[Worker Health]
-        B4[System Dashboard]
-    end
+---
 
-    subgraph Backend["One‑File SocialAi Node"]
-        C1[Healdec Engine]
-        C2[Worker Manager]
-        C3[API Gateway]
-        C4[SmartBrain Integration]
-    end
+## Table of Contents
 
-    subgraph Workers["Parallel Workers"]
-        W1[Farcaster Worker]
-        W2[Reddit Worker]
-        W3[Ethereum RPC]
-        W4[BASE RPC]
-        W5[Solana RPC]
-        W6[Search Worker]
-        W7[AI Worker]
-    end
+1. [High-Level System Overview](#1-high-level-system-overview)
+2. [Backend Architecture](#2-backend-architecture)
+3. [Frontend Architecture](#3-frontend-architecture)
+4. [Data Model](#4-data-model)
+5. [Worker Orchestration](#5-worker-orchestration)
+6. [API Gateway](#6-api-gateway)
+7. [Security Considerations](#7-security-considerations)
+8. [Future Extensions](#8-future-extensions)
 
-    subgraph Database["Database (Postgres)"]
-        D1[Users]
-        D2[Profiles]
-        D3[Posts]
-        D4[External Posts]
-        D5[Follows]
-        D6[Likes]
-        D7[Claims]
-        D8[Embeddings]
-        D9[Feature Flags]
-        D10[Settings]
-    end
+---
 
-    PublicLayer --> Backend
-    AdminLayer --> Backend
-    Backend --> Workers
-    Workers --> Database
-```
-
-## Backend Architecture (Detailed)
-
-The following diagram provides a detailed view of the One‑File SocialAi Node backend architecture:
+## 1. High-Level System Overview
 
 ```mermaid
 flowchart TD
+  subgraph PublicLayer["Public Layer (Astro + Vite)"]
+    P1[SEO Pages]
+    P2[Profiles]
+    P3[Timelines]
+    P4[Claim Flow]
+    P5[Landing Pages]
+  end
 
-    Root["socialai.node.js (One‑File Orchestrator)"]
+  subgraph AdminLayer["Admin Layer (Angular)"]
+    A1[Feature Flags]
+    A2[Sync Controls]
+    A3[Worker Health]
+    A4[System Dashboard]
+    A5[Abuse Controls]
+  end
 
-    subgraph Healdec["Healdec Engine"]
-        H1[Dependency Scan]
-        H2[Safe Update]
-        H3[Rebuild]
-        H4[Validation]
-        H5[Rollback]
-    end
+  subgraph Backend["One‑File SocialAi Node"]
+    B1[Healdec Engine]
+    B2[Worker Manager]
+    B3[API Gateway]
+    B4[SSR Renderer]
+    B5[SmartBrain Integration]
+  end
 
-    subgraph Orchestrator["Worker Manager"]
-        O1[Start Workers]
-        O2[Restart on Failure]
-        O3[Parallel Execution]
-        O4[Health Checks]
-    end
+  subgraph Workers["Parallel Workers"]
+    W1[Farcaster Worker]
+    W2[Reddit Worker]
+    W3[Ethereum RPC]
+    W4[BASE RPC]
+    W5[Solana RPC]
+    W6[Search Worker]
+    W7[AI Worker]
+  end
 
-    subgraph API["API Gateway"]
-        A1[REST Endpoints]
-        A2[Auth (Farcaster + SIWE)]
-        A3[Rate Limiting]
-    end
+  subgraph Database["Database (Postgres)"]
+    D1[Users]
+    D2[Profiles]
+    D3[Posts]
+    D4[External Posts]
+    D5[Follows]
+    D6[Likes]
+    D7[Claims]
+    D8[Embeddings]
+    D9[Feature Flags]
+    D10[Settings]
+  end
 
-    subgraph SSR["SSR Renderer"]
-        S1[Astro SSR]
-        S2[Public Profiles]
-        S3[Timelines]
-        S4[Claim Pages]
-    end
-
-    subgraph SmartBrain["SmartBrain Integration"]
-        SB1[Summaries]
-        SB2[Recommendations]
-        SB3[Topic Clustering]
-        SB4[Profile Optimization]
-    end
-
-    Root --> Healdec
-    Root --> Orchestrator
-    Root --> API
-    Root --> SSR
-    Root --> SmartBrain
+  PublicLayer --> Backend
+  AdminLayer --> Backend
+  Backend --> Workers
+  Workers --> Database
 ```
 
-## Worker Orchestration Architecture
+### System Components
 
-The following diagram shows how the Worker Manager orchestrates parallel workers and their interaction with the database:
+The SocialAi system consists of five major layers:
+
+1. **Public Layer** - User-facing web application for social discovery
+2. **Admin Layer** - Administrative console for system management
+3. **Backend** - One-file node orchestrator managing all backend services
+4. **Workers** - Parallel workers for data synchronization and processing
+5. **Database** - PostgreSQL database with vector extensions for AI features
+
+---
+
+## 2. Backend Architecture
+
+The backend is built as a **one-file orchestrator** (`socialai.node.js`) that manages all backend subsystems. This design simplifies deployment and maintenance while providing powerful orchestration capabilities.
+
+### 2.1 Healdec Engine
+
+The Healdec Engine provides auto-healing capabilities to ensure system reliability:
+
+```mermaid
+flowchart TD
+  A[Dependency Scan] --> B[Health Check]
+  B --> C{Healthy?}
+  C -->|Yes| D[Continue Monitoring]
+  C -->|No| E[Safe Update/Restart]
+  E --> F[Rebuild]
+  F --> G[Validation]
+  G --> H{Valid?}
+  H -->|Yes| D
+  H -->|No| I[Rollback]
+  I --> D
+```
+
+**Key Features:**
+- **Dependency Scanning**: Continuously monitors worker health
+- **Safe Updates**: Validates changes before applying them
+- **Auto-Rebuild**: Rebuilds workers when needed
+- **Validation**: Ensures changes don't break the system
+- **Rollback**: Automatically reverts problematic changes
+- **Health Checks**: Runs every 30 seconds
+- **Max Restarts**: Limits restart attempts to 3 per worker
+
+### 2.2 Worker Manager
+
+The Worker Manager orchestrates parallel workers with automatic restart capabilities:
+
+**Responsibilities:**
+- Start and stop workers
+- Monitor worker health
+- Restart failed workers with exponential backoff
+- Maintain worker state
+- Log worker activity
+
+**Configuration:**
+```javascript
+workers: {
+  farcaster: { enabled: true, path: '../workers/farcaster.worker.js' },
+  reddit: { enabled: false, path: '../workers/reddit.worker.js' },
+  ethereum: { enabled: true, path: '../workers/ethereum.worker.js' },
+  base: { enabled: true, path: '../workers/base.worker.js' },
+  solana: { enabled: true, path: '../workers/solana.worker.js' },
+  search: { enabled: true, path: '../workers/search.worker.js' },
+  ai: { enabled: true, path: '../workers/ai.worker.js' }
+}
+```
+
+### 2.3 API Gateway
+
+The API Gateway provides RESTful endpoints with authentication and rate limiting:
+
+**Features:**
+- REST API endpoints for all operations
+- Farcaster authentication (Sign-In with Farcaster)
+- SIWE (Sign-In with Ethereum) support
+- Rate limiting (100 requests/minute default)
+- CORS configuration
+- Helmet security headers
+- Request logging
+
+**Core Endpoints:**
+- `/api/users` - User management
+- `/api/profiles` - Profile operations
+- `/api/posts` - Post CRUD operations
+- `/api/timeline` - Timeline feeds
+- `/api/search` - Search functionality
+- `/api/claims` - Identity claims
+- `/api/admin/*` - Admin operations
+
+### 2.4 SSR Renderer
+
+Server-Side Rendering integration with Astro for optimal SEO:
+
+**Capabilities:**
+- Pre-renders public pages
+- Dynamic profile pages
+- Timeline generation
+- Claim flow pages
+- SEO optimization
+- Fast initial page load
+
+### 2.5 SmartBrain Integration
+
+AI-powered features using vector embeddings and LLM processing:
+
+**Features:**
+- Content summaries
+- Personalized recommendations
+- Topic clustering
+- Profile optimization
+- Semantic search
+- Vector similarity matching
+
+---
+
+## 3. Frontend Architecture
+
+### 3.1 Public Application (Astro + Vite)
+
+**Technology Stack:**
+- Astro for SSR and static generation
+- Vite for fast development and building
+- TypeScript for type safety
+- Zero JavaScript by default (progressive enhancement)
+
+**Key Pages:**
+- `index.astro` - Landing page
+- `profiles.astro` - Profile directory
+- `profile/[username].astro` - Individual profile
+- `timeline.astro` - Social timeline
+- `claim.astro` - Identity claim flow
+
+**Architecture Pattern:**
+- Static Site Generation (SSG) for landing pages
+- Server-Side Rendering (SSR) for dynamic content
+- Minimal client-side JavaScript
+- Progressive enhancement
+- SEO-first approach
+
+### 3.2 Admin Application (Angular)
+
+**Technology Stack:**
+- Angular 17+ for reactive UI
+- TypeScript for type safety
+- RxJS for reactive programming
+- Angular Material for UI components
+
+**Key Components:**
+- **Dashboard Component**: System overview and metrics
+- **Feature Flags Component**: Toggle system features
+- **Sync Controls Component**: Manage data synchronization
+- **Worker Health Component**: Monitor worker status
+- **Abuse Controls Component**: Content moderation
+
+**Services:**
+- **API Service**: Backend communication
+- **Auth Service**: Authentication management
+- **State Service**: Application state management
+
+**Architecture Pattern:**
+- Component-based architecture
+- Reactive data flow with RxJS
+- Lazy loading for performance
+- HTTP interceptors for auth
+- Route guards for access control
+
+---
+
+## 4. Data Model
+
+### 4.1 Core Entities
+
+```mermaid
+erDiagram
+  USERS ||--o{ PROFILES : has
+  USERS ||--o{ POSTS : creates
+  USERS ||--o{ FOLLOWS : follows
+  USERS ||--o{ LIKES : likes
+  USERS ||--o{ CLAIMS : claims
+  PROFILES ||--o{ CLAIMS : verified_by
+  POSTS ||--o{ LIKES : receives
+  POSTS ||--o{ POSTS : replies_to
+  EXTERNAL_POSTS ||--o{ LIKES : receives
+  PROFILES ||--|| USERS : belongs_to
+  EMBEDDINGS ||--o{ POSTS : represents
+  EMBEDDINGS ||--o{ EXTERNAL_POSTS : represents
+  EMBEDDINGS ||--o{ PROFILES : represents
+```
+
+### 4.2 Database Tables
+
+#### Users
+Primary user accounts linked to blockchain identities.
+
+```sql
+CREATE TABLE users (
+    id UUID PRIMARY KEY,
+    farcaster_id BIGINT UNIQUE,
+    ethereum_address VARCHAR(42) UNIQUE,
+    ens_name VARCHAR(255),
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+```
+
+#### Profiles
+User profile information, claimable by identity verification.
+
+```sql
+CREATE TABLE profiles (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    username VARCHAR(255) UNIQUE NOT NULL,
+    display_name VARCHAR(255),
+    bio TEXT,
+    avatar_url TEXT,
+    banner_url TEXT,
+    website_url TEXT,
+    twitter_handle VARCHAR(255),
+    claimed BOOLEAN DEFAULT FALSE,
+    verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+```
+
+#### Posts
+Internal posts created by users.
+
+```sql
+CREATE TABLE posts (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    content TEXT NOT NULL,
+    media_urls TEXT[],
+    parent_id UUID REFERENCES posts(id),
+    root_id UUID REFERENCES posts(id),
+    reply_count INTEGER DEFAULT 0,
+    recast_count INTEGER DEFAULT 0,
+    like_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+```
+
+#### External Posts
+Posts synced from external sources (Farcaster, Reddit, etc.).
+
+```sql
+CREATE TABLE external_posts (
+    id UUID PRIMARY KEY,
+    external_id VARCHAR(255) UNIQUE NOT NULL,
+    source VARCHAR(50) NOT NULL,
+    author_id VARCHAR(255),
+    author_name VARCHAR(255),
+    content TEXT,
+    media_urls TEXT[],
+    url TEXT,
+    parent_id VARCHAR(255),
+    reply_count INTEGER DEFAULT 0,
+    like_count INTEGER DEFAULT 0,
+    metadata JSONB,
+    created_at TIMESTAMP,
+    synced_at TIMESTAMP
+);
+```
+
+#### Follows
+Social graph connections between users.
+
+```sql
+CREATE TABLE follows (
+    id UUID PRIMARY KEY,
+    follower_id UUID REFERENCES users(id),
+    following_id UUID REFERENCES users(id),
+    created_at TIMESTAMP,
+    UNIQUE(follower_id, following_id)
+);
+```
+
+#### Likes
+User interactions with posts.
+
+```sql
+CREATE TABLE likes (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    post_id UUID REFERENCES posts(id),
+    external_post_id UUID REFERENCES external_posts(id),
+    created_at TIMESTAMP,
+    CHECK (post_id IS NOT NULL OR external_post_id IS NOT NULL)
+);
+```
+
+#### Claims
+Identity verification records.
+
+```sql
+CREATE TABLE claims (
+    id UUID PRIMARY KEY,
+    user_id UUID REFERENCES users(id),
+    profile_id UUID REFERENCES profiles(id),
+    claim_type VARCHAR(50) NOT NULL,
+    claim_value VARCHAR(255) NOT NULL,
+    verified BOOLEAN DEFAULT FALSE,
+    signature TEXT,
+    created_at TIMESTAMP,
+    verified_at TIMESTAMP
+);
+```
+
+#### Embeddings
+Vector embeddings for AI-powered features.
+
+```sql
+CREATE TABLE embeddings (
+    id UUID PRIMARY KEY,
+    content_id UUID NOT NULL,
+    content_type VARCHAR(50) NOT NULL,
+    embedding vector(1536),
+    metadata JSONB,
+    created_at TIMESTAMP
+);
+```
+
+#### Feature Flags
+System feature toggles.
+
+```sql
+CREATE TABLE feature_flags (
+    id UUID PRIMARY KEY,
+    flag_name VARCHAR(255) UNIQUE NOT NULL,
+    enabled BOOLEAN DEFAULT FALSE,
+    description TEXT,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+```
+
+#### Settings
+System configuration.
+
+```sql
+CREATE TABLE settings (
+    id UUID PRIMARY KEY,
+    key VARCHAR(255) UNIQUE NOT NULL,
+    value JSONB NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+```
+
+---
+
+## 5. Worker Orchestration
+
+### 5.1 Worker Architecture
 
 ```mermaid
 flowchart LR
-
-    subgraph Orchestrator["SocialAi Node"]
-        O1[Worker Manager]
-    end
-
-    subgraph Workers["Parallel Workers"]
-        W1[Farcaster Worker]
-        W2[Reddit Worker]
-        W3[Ethereum RPC]
-        W4[BASE RPC]
-        W5[Solana RPC]
-        W6[Search Worker]
-        W7[AI Worker]
-    end
-
-    subgraph DB["Postgres"]
-        D1[(Users)]
-        D2[(Profiles)]
-        D3[(Posts)]
-        D4[(External Posts)]
-        D5[(Embeddings)]
-    end
-
-    O1 --> W1
-    O1 --> W2
-    O1 --> W3
-    O1 --> W4
-    O1 --> W5
-    O1 --> W6
-    O1 --> W7
-
-    W1 --> D1
-    W1 --> D2
-    W1 --> D3
-    W2 --> D4
-    W3 --> D1
-    W4 --> D1
-    W5 --> D1
-    W6 --> D5
-    W7 --> D5
+  WM[Worker Manager] --> FW[Farcaster Worker]
+  WM --> RW[Reddit Worker]
+  WM --> EW[Ethereum RPC]
+  WM --> BW[BASE RPC]
+  WM --> SW[Solana RPC]
+  WM --> SEW[Search Worker]
+  WM --> AW[AI Worker]
+  
+  FW --> DB[(Database)]
+  RW --> DB
+  EW --> DB
+  BW --> DB
+  SW --> DB
+  SEW --> DB
+  AW --> DB
 ```
 
-## Component Descriptions
+### 5.2 Worker Descriptions
 
-### Public Layer (Astro + Vite)
-The public-facing layer of SocialAi, built with Astro and Vite for optimal performance and SEO:
-- **SEO Pages**: Search engine optimized landing pages
-- **Profiles**: User profile pages
-- **Timelines**: Social activity feeds
-- **Claim Flow**: Identity verification and claiming process
+#### Farcaster Worker
+Syncs data from Farcaster Hub:
+- User profiles
+- Casts (posts)
+- Reactions
+- Follows
+- Syncs every 5 minutes (configurable)
 
-### Admin Layer (Angular)
-Administrative interface for system management and monitoring:
-- **Feature Flags**: Toggle features on/off
-- **Sync Controls**: Manage data synchronization
-- **Worker Health**: Monitor worker status
-- **System Dashboard**: Overall system metrics
+#### Reddit Worker
+Syncs data from Reddit API:
+- Subreddit posts
+- Comments
+- User profiles
+- Currently disabled by default
 
-### Backend (One‑File SocialAi Node)
-Core backend service powered by Healdec:
-- **Healdec Engine**: Auto-healing orchestration engine
-- **Worker Manager**: Manages parallel workers
-- **API Gateway**: Request routing and handling
-- **SmartBrain Integration**: AI-powered features integration
+#### Ethereum RPC Worker
+Monitors Ethereum blockchain:
+- ENS lookups
+- Wallet balances
+- Transaction history
+- Smart contract interactions
 
-#### Detailed Backend Components
+#### BASE RPC Worker
+Monitors BASE blockchain:
+- Wallet balances
+- Transaction history
+- BASE-specific features
 
-**socialai.node.js (One‑File Orchestrator)**
-The central orchestrator that coordinates all backend subsystems in a single file.
+#### Solana RPC Worker
+Monitors Solana blockchain:
+- Wallet balances
+- Transaction history
+- NFT metadata
 
-**Healdec Engine**
-Auto-healing system that maintains application health:
-- **Dependency Scan**: Monitors and scans dependencies
-- **Safe Update**: Safely updates dependencies with validation
-- **Rebuild**: Rebuilds application when needed
-- **Validation**: Validates changes before deployment
-- **Rollback**: Automatically rolls back problematic changes
+#### Search Worker
+Maintains search indexes:
+- Full-text search
+- Profile search
+- Post search
+- Tag search
 
-**Worker Manager**
-Orchestrates parallel worker processes:
-- **Start Workers**: Initializes worker processes
-- **Restart on Failure**: Automatically restarts failed workers
-- **Parallel Execution**: Manages concurrent worker operations
-- **Health Checks**: Monitors worker health status
+#### AI Worker
+Processes AI tasks:
+- Generate embeddings
+- Create summaries
+- Provide recommendations
+- Topic clustering
+- Profile optimization
 
-**API Gateway**
-Handles all API requests and security:
-- **REST Endpoints**: RESTful API endpoints
-- **Auth (Farcaster + SIWE)**: Authentication via Farcaster and Sign-In with Ethereum
-- **Rate Limiting**: Protects against abuse
+### 5.3 Worker Communication
 
-**SSR Renderer**
-Server-side rendering for public pages:
-- **Astro SSR**: Astro-based server-side rendering
-- **Public Profiles**: Renders user profile pages
-- **Timelines**: Renders timeline views
-- **Claim Pages**: Renders identity claim pages
+Workers communicate with the database directly and do not communicate with each other. This design ensures:
+- **Loose coupling**: Workers are independent
+- **Fault isolation**: Worker failures don't cascade
+- **Scalability**: Workers can scale independently
+- **Simplicity**: No complex message passing
 
-**SmartBrain Integration**
-AI-powered features and analysis:
-- **Summaries**: Generates content summaries
-- **Recommendations**: Provides personalized recommendations
-- **Topic Clustering**: Groups content by topics
-- **Profile Optimization**: Optimizes user profiles
+---
 
-### Parallel Workers
-Independent worker processes for various data sources and operations:
-- **Farcaster Worker**: Syncs Farcaster Hub data
-- **Reddit Worker**: Syncs Reddit content
-- **Ethereum RPC**: Ethereum blockchain interactions
-- **BASE RPC**: BASE blockchain interactions
-- **Solana RPC**: Solana blockchain interactions
-- **Search Worker**: Search indexing and queries
-- **AI Worker**: AI processing tasks
+## 6. API Gateway
 
-### Database (Postgres)
-PostgreSQL database storing all application data:
-- **Users**: User accounts
-- **Profiles**: User profile information
-- **Posts**: Internal posts
-- **External Posts**: Posts from external sources
-- **Follows**: Social graph connections
-- **Likes**: User interactions
-- **Claims**: Identity claims
-- **Embeddings**: AI vector embeddings
-- **Feature Flags**: Feature toggle states
-- **Settings**: System configuration
+### 6.1 Authentication Flow
 
-## Data Flow
+```mermaid
+sequenceDiagram
+  participant User
+  participant Frontend
+  participant API
+  participant Farcaster
+  participant Database
+  
+  User->>Frontend: Click "Sign In"
+  Frontend->>Farcaster: Request signature
+  Farcaster->>Frontend: Return signature
+  Frontend->>API: POST /api/auth/farcaster
+  API->>API: Verify signature
+  API->>Database: Create/update user
+  Database->>API: User data
+  API->>Frontend: JWT token
+  Frontend->>User: Authenticated
+```
 
-1. **Public requests** flow from the Public Layer to the Backend
-2. **Admin requests** flow from the Admin Layer to the Backend
-3. The **Backend** orchestrates Workers to perform operations
-4. **Workers** interact with the Database for data persistence and retrieval
+### 6.2 Rate Limiting
+
+Default configuration:
+- 100 requests per minute per IP
+- Configurable via settings table
+- 429 status code on limit exceeded
+- Exponential backoff recommended
+
+### 6.3 API Versioning
+
+Current version: v1
+Base path: `/api/v1/*`
+
+Future versions will use separate paths to maintain backward compatibility.
+
+---
+
+## 7. Security Considerations
+
+### 7.1 Authentication
+- **Farcaster Sign-In**: Cryptographic signature verification
+- **SIWE**: Ethereum wallet signature verification
+- **JWT Tokens**: Stateless authentication
+- **Token Expiration**: 24-hour default lifetime
+- **Refresh Tokens**: Not yet implemented (future)
+
+### 7.2 Authorization
+- **Role-Based Access**: Admin vs. User roles
+- **Profile Ownership**: Users can only edit claimed profiles
+- **Feature Flags**: Admin-only access
+- **Sync Controls**: Admin-only access
+
+### 7.3 Data Protection
+- **PostgreSQL Encryption**: Data at rest
+- **HTTPS**: Data in transit (production)
+- **Input Validation**: All API endpoints
+- **SQL Injection Protection**: Parameterized queries
+- **XSS Protection**: Content sanitization
+- **CSRF Protection**: Token validation
+
+### 7.4 Rate Limiting & DDoS Protection
+- Request rate limiting
+- IP-based throttling
+- Exponential backoff
+- Cloudflare integration (production)
+
+### 7.5 Content Moderation
+- Admin abuse controls
+- Content flagging system
+- User blocking
+- Automated content filtering (future)
+
+---
+
+## 8. Future Extensions
+
+### 8.1 Planned Network Integrations
+- **Lens Protocol**: Social graph and content
+- **Bluesky**: Decentralized social network
+- **Zora**: NFT and creator content
+- **Mastodon**: Federated social network
+
+### 8.2 AI Enhancements
+- Advanced recommendation algorithms
+- Content quality scoring
+- Spam detection
+- Sentiment analysis
+- Automated moderation
+
+### 8.3 Scalability Improvements
+- **Horizontal Scaling**: Multiple backend nodes
+- **Worker Distribution**: Separate worker servers
+- **Database Sharding**: Partition by user/region
+- **CDN Integration**: Static asset delivery
+- **Caching Layer**: Redis for hot data
+
+### 8.4 Feature Roadmap
+- **Real-time Updates**: WebSocket support
+- **Push Notifications**: Mobile and web
+- **Advanced Search**: Filters and facets
+- **Analytics Dashboard**: User and system metrics
+- **API Webhooks**: Event notifications
+- **GraphQL API**: Alternative to REST
+- **Mobile Apps**: Native iOS and Android
+
+### 8.5 Developer Tools
+- **API Documentation**: OpenAPI/Swagger
+- **SDK Libraries**: JavaScript, Python, Go
+- **Testing Framework**: Integration tests
+- **Local Development**: Docker Compose setup
+- **CI/CD Pipeline**: Automated deployment
+
+---
+
+## Conclusion
+
+The SocialAi architecture is designed for simplicity, reliability, and extensibility. The one-file node orchestrator simplifies deployment while the parallel worker architecture enables scalability. The system is built with modern web technologies and follows best practices for security, performance, and maintainability.
+
+For UI/UX specifications, see [UIUXSPECTS.md](UIUXSPECTS.md).  
+For API documentation, see [API.md](API.md).  
+For installation instructions, see [INSTALLATION.md](INSTALLATION.md)
