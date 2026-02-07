@@ -123,7 +123,20 @@ For detailed setup instructions, see [docs/INSTALLATION.md](docs/INSTALLATION.md
 
 ## 📚 Documentation
 
-- [Installation Guide](docs/INSTALLATION.md) - Complete setup and deployment guide
-- [Architecture](docs/ARCHITECTURE.md) - System architecture and component diagrams
-- [UI/UX Specifications](docs/UIUXSPECTS.md) - User interface and user experience guidelines
-- [API Reference](docs/API.md) - Full API documentation
+### Core Documentation
+- **[Documentation Hub](docs/README.md)** - Complete documentation index and navigation
+- **[Installation Guide](docs/INSTALLATION.md)** - Setup and deployment guide
+- **[Architecture](docs/ARCHITECTURE.md)** - System architecture and component diagrams
+- **[API Reference](docs/API.md)** - Full REST API documentation
+- **[UI/UX Specifications](docs/UIUXSPECTS.md)** - User interface guidelines
+
+### Feature Documentation
+- **[Auto Features](docs/FEATURES.md)** - Auto Sync, Auto Test, Auto Analysis, Auto Fix
+- **[Worker System](docs/WORKERS.md)** - Parallel worker architecture guide
+- **[Healdec Engine](docs/HEALDEC.md)** - Auto-healing system documentation
+- **[SmartBrain Integration](docs/SMARTBRAIN.md)** - AI features and embeddings
+
+### Operational Guides
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+
+**Start here**: [docs/README.md](docs/README.md) for the complete documentation hub.
