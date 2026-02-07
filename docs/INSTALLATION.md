@@ -274,7 +274,44 @@ npm run build
 
 ## Architecture Details
 
+SocialAi features a unique architecture with these key capabilities:
+
+### Auto Features
+
+1. **Auto Sync**: Automatically synchronizes data from external sources
+   - Farcaster Hub data every 60 seconds
+   - Reddit posts (when enabled)
+   - Blockchain data from Ethereum, BASE, and Solana
+   - Configurable sync intervals via settings
+
+2. **Auto Test**: Continuous health monitoring and validation
+   - Worker health checks every 30 seconds
+   - Database connection monitoring
+   - API response time tracking
+   - Automatic alerting on failures
+
+3. **Auto Analysis**: AI-powered content processing
+   - Automatic vector embedding generation
+   - Topic clustering and trend detection
+   - Content summarization
+   - User recommendations
+
+4. **Auto Fix**: Self-healing system capabilities
+   - Automatic worker restarts on failure
+   - Configuration rollback on errors
+   - Database connection pool management
+   - Resource cleanup and optimization
+
+### Healdec Engine
+
+The Healdec engine provides auto-healing orchestration:
+- Monitors all system components
+- Validates changes before applying
+- Automatically recovers from failures
+- Maintains system health with minimal intervention
+
 For detailed architecture information, see [ARCHITECTURE.md](ARCHITECTURE.md).
+For auto features documentation, see [FEATURES.md](FEATURES.md).
 
 ## License
 
