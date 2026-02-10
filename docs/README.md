@@ -27,14 +27,14 @@ Welcome to the comprehensive documentation for **SocialAi**, the open social ind
 - [SmartBrain Integration](SMARTBRAIN.md) - AI features and embeddings
 
 ### Operations
-- [Deployment Guide](DEPLOYMENT.md) - Production deployment instructions
+- Deployment Guide - Production deployment instructions
 - [Troubleshooting](TROUBLESHOOTING.md) - Common issues and solutions
-- [Performance Tuning](PERFORMANCE.md) - Optimization guidelines
+- Performance Tuning - Optimization guidelines
 
 ### Development
-- [Contributing Guidelines](CONTRIBUTING.md) - How to contribute to the project
-- [Development Workflow](DEVELOPMENT.md) - Local development setup and practices
-- [Testing Guide](TESTING.md) - Testing strategies and best practices
+- Contributing Guidelines - How to contribute to the project
+- Development Workflow - Local development setup and practices
+- Testing Guide - Testing strategies and best practices
 
 ---
 
