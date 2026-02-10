@@ -367,10 +367,15 @@ async function generateSummary(postId) {
   
   const summary = response.choices[0].message.content;
   
-  // 3. Store summary
-  await db.query(`
-    UPDATE posts SET summary = $1 WHERE id = $2
-  `, [summary, postId]);
+  // 3. Store summary (optional)
+  // The default `posts` schema does not include a `summary` column.
+  // Persist this value using your own storage layer, for example:
+  // - A separate `post_summaries` table keyed by `post_id`
+  // - A cache (e.g., Redis) for quick retrieval
+  // - A search/indexing system (e.g., Elasticsearch, OpenSearch)
+  //
+  // Example (pseudo-code):
+  // await postSummaries.save({ postId, summary });
   
   return summary;
 }
