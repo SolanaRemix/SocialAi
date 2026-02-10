@@ -628,11 +628,9 @@ Control Auto Analysis features:
 
 ```json
 {
-  "ai_embeddings": true,
   "ai_summaries": true,
   "ai_recommendations": true,
-  "ai_topic_clustering": true,
-  "ai_sentiment_analysis": false
+  "search_enabled": true
 }
 ```
 
