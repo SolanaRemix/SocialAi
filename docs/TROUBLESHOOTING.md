@@ -283,14 +283,12 @@ const SYNC_INTERVAL = 60000;  // 1 minute
 
 1. **Review error logs**:
 ```bash
-# Check database for error patterns
-psql -U postgres -d socialai -c "
-  SELECT worker_name, COUNT(*), MAX(timestamp)
-  FROM worker_logs
-  WHERE level = 'error'
-  GROUP BY worker_name
-  ORDER BY COUNT(*) DESC;
-"
+# Check worker service logs for error patterns
+# If using Docker Compose:
+docker compose logs worker -n 200 | grep -i "error" || true
+
+# If not using Docker, review the worker process logs or console output
+# and look for repeated error messages for the same worker.
 ```
 
 2. **Check API rate limits**:
