@@ -118,24 +118,22 @@ sequenceDiagram
 ```bash
 # Farcaster
 FARCASTER_HUB_URL=https://hub.farcaster.xyz
-FARCASTER_SYNC_INTERVAL=60000  # milliseconds
 
 # Reddit
 REDDIT_CLIENT_ID=your_client_id
 REDDIT_CLIENT_SECRET=your_secret
-REDDIT_SYNC_INTERVAL=120000
 
 # Ethereum
 ETHEREUM_RPC_URL=https://mainnet.infura.io/v3/YOUR_KEY
-ETH_SYNC_INTERVAL=300000
 
 # BASE
 BASE_RPC_URL=https://mainnet.base.org
-BASE_SYNC_INTERVAL=300000
 
 # Solana
 SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
-SOLANA_SYNC_INTERVAL=300000
+
+# Note: Sync intervals are currently hard-coded in the workers and
+# are not configurable via environment variables.
 ```
 
 #### Feature Flags
