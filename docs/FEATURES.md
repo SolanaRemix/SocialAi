@@ -357,16 +357,8 @@ Auto Test generates alerts for:
 Check system health programmatically:
 
 ```bash
-# Overall system health
+# Overall system health (single endpoint)
 GET /health
-
-# Detailed worker status
-GET /api/workers/status
-
-# Component-specific health
-GET /api/health/database
-GET /api/health/workers
-GET /api/health/api
 ```
 
 **Response Format:**
