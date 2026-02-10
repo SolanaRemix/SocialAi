@@ -596,12 +596,23 @@ if (DEBUG) {
 }
 ```
 
-**Use database for debugging**:
+**Use structured logs for debugging**:
 ```javascript
-await db.query(`
-  INSERT INTO worker_logs (worker_name, level, message, data)
-  VALUES ($1, $2, $3, $4)
-`, [this.name, 'debug', 'Processing item', { itemId: item.id }]);
+const logDebug = (workerName, message, data) => {
+  const entry = {
+    timestamp: new Date().toISOString(),
+    worker: workerName,
+    level: 'debug',
+    message,
+    data,
+  };
+
+  // Send to stdout; your log aggregation system can collect and index this.
+  console.log(JSON.stringify(entry));
+};
+
+// Example usage inside a worker:
+logDebug(this.name, 'Processing item', { itemId: item.id });
 ```
 
 ---
