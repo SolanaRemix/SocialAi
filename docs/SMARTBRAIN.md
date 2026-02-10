@@ -261,17 +261,17 @@ Embeddings are stored in PostgreSQL with pgvector:
 ```sql
 -- Create embeddings table
 CREATE TABLE embeddings (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     content_id UUID NOT NULL,
     content_type VARCHAR(50) NOT NULL,
     embedding vector(1536),  -- pgvector type
     metadata JSONB,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    -- Indexes for efficient similarity search
-    INDEX idx_embeddings_content (content_id, content_type),
-    INDEX idx_embeddings_vector ON embeddings USING ivfflat (embedding vector_cosine_ops)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Indexes for efficient similarity search
+CREATE INDEX idx_embeddings_content ON embeddings (content_id, content_type);
+CREATE INDEX idx_embeddings_vector ON embeddings USING ivfflat (embedding vector_cosine_ops);
 ```
 
 ### Similarity Search
