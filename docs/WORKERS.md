@@ -635,10 +635,7 @@ Check worker health via:
   {
     "name": "farcaster",
     "healthy": true,
-    "enabled": true,
-    "lastRun": "2024-01-01T00:00:00Z",
-    "errorRate": 0.01,
-    "restartCount": 0
+    "enabled": true
   }
 ]
 ```
