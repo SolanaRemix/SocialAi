@@ -33,10 +33,10 @@ SmartBrain integrates artificial intelligence capabilities throughout SocialAi:
 
 ### Technology Stack
 
-- **OpenAI API**: GPT-4 for text generation, text-embedding-ada-002 for embeddings
-- **PostgreSQL pgvector**: Vector similarity search
-- **NumPy-style operations**: Vector math and clustering
-- **Batch Processing**: Efficient API usage
+- **Current implementation**: In-process content analysis (e.g., string operations and SQL queries) without external AI APIs or vector search
+- **Database**: PostgreSQL for storing posts, profiles, and analytics
+- **Planned integration**: OpenAI API (for advanced text generation and embeddings) and PostgreSQL pgvector (for semantic vector search and recommendations)
+- **Processing model**: Batch-friendly worker pattern for future AI/embedding jobs
 
 ---
 
