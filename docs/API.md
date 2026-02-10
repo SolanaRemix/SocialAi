@@ -1,11 +1,45 @@
 # SocialAi API Reference
 
-Complete API documentation for the SocialAi backend.
+Complete API documentation for the SocialAi backend. This document covers all REST endpoints, request/response formats, authentication, and error handling.
+
+**API Version**: 1.0  
+**Last Updated**: February 2026
+
+---
+
+## Table of Contents
+
+- [Base URL](#base-url)
+- [Authentication](#authentication)
+- [Rate Limiting](#rate-limiting)
+- [Pagination](#pagination)
+- [Error Handling](#error-handling)
+- [Endpoints](#endpoints)
+  - [Health & Status](#health--status)
+  - [Users](#users)
+  - [Profiles](#profiles)
+  - [Posts](#posts)
+  - [External Posts](#external-posts)
+  - [Timeline](#timeline)
+  - [Feature Flags](#feature-flags)
+  - [Settings](#settings)
+  - [AI Features](#ai-features)
+  - [Workers](#workers)
+- [WebSocket Support](#websocket-support)
+- [CORS](#cors)
+
+---
 
 ## Base URL
 
+**Development**:
 ```
 http://localhost:3000
+```
+
+**Production**:
+```
+https://api.socialai.com
 ```
 
 ## Authentication
@@ -418,6 +452,63 @@ Future versions will include proper pagination with `limit` and `offset` or curs
 
 CORS is enabled for all origins in development. In production, configure allowed origins via environment variables.
 
+---
+
+### Workers
+
+#### GET /api/workers/status
+
+Get detailed status of all workers.
+
+**Response:**
+```json
+[
+  {
+    "name": "farcaster",
+    "healthy": true,
+    "enabled": true,
+    "lastRun": "2024-01-01T00:00:00Z",
+    "errorRate": 0.01,
+    "restartCount": 0
+  },
+  {
+    "name": "ai",
+    "healthy": true,
+    "enabled": true,
+    "lastRun": "2024-01-01T00:00:00Z",
+    "errorRate": 0.02,
+    "restartCount": 0
+  }
+]
+```
+
+#### POST /api/workers/restart/:name
+
+Restart a specific worker (Admin only).
+
+**Parameters:**
+- `name` (string) - Worker name (e.g., "farcaster", "ai")
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Worker restarted successfully"
+}
+```
+
+**Error Responses:**
+- `404` - Worker not found
+- `403` - Unauthorized (Admin only)
+
+---
+
 ## WebSocket Support
 
 WebSocket support for real-time updates is planned for future releases.
+
+**Planned Features**:
+- Real-time post updates
+- Live timeline feeds
+- Notification push
+- Worker status monitoring
