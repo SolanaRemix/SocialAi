@@ -15,7 +15,8 @@
     "build": "npm run build:public && npm run build:admin",
     "build:public": "cd apps/public && npm run build",
     "build:admin": "cd apps/admin && npm run build",
-    "db:init": "psql -U postgres -f db/schema.sql"
+    "db:init": "psql -U postgres -f db/schema.sql",
+    "test": "vitest run"
   },
   "keywords": [
     "social",
@@ -24,5 +25,9 @@
     "ai"
   ],
   "author": "SocialAi Team",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "vitest": "^1.2.0",
+    "@types/node": "^20.10.0"
+  }
 }
