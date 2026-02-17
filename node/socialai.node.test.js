@@ -26,8 +26,11 @@ vi.mock('pg', () => {
     };
     
     if (callback) {
+      // Callback style - don't return promise
       callback(null, result);
+      return;
     }
+    // Promise style
     return Promise.resolve(result);
   });
   

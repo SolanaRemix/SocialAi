@@ -5,8 +5,11 @@ WORKDIR /app
 # Copy package files
 COPY package.json ./
 COPY node/package.json ./node/
-COPY workers/package.json ./workers/ 2>/dev/null || true
-COPY apps/*/package.json ./apps/ 2>/dev/null || true
+
+# Copy workspace package files if they exist
+RUN mkdir -p ./workers ./apps
+COPY workers/package.json ./workers/ || true
+COPY apps/*/package.json ./apps/ || true
 
 # Install dependencies
 RUN npm install
