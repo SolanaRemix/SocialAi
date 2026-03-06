@@ -18,6 +18,22 @@ export const routes: Routes = [
     loadComponent: () => import('./components/sync-controls/sync-controls.component').then(m => m.SyncControlsComponent)
   },
   {
+    path: 'smartbrain',
+    loadComponent: () => import('./components/smartbrain/smartbrain.component').then(m => m.SmartBrainComponent)
+  },
+  {
+    path: 'config',
+    loadComponent: () => import('./components/config-view/config-view.component').then(m => m.ConfigViewComponent)
+  },
+  {
+    path: 'suggestions',
+    loadComponent: () => import('./components/suggestions/suggestions.component').then(m => m.SuggestionsComponent)
+  },
+  {
+    path: 'contracts',
+    loadComponent: () => import('./components/contracts/contracts.component').then(m => m.ContractsComponent)
+  },
+  {
     path: '**',
     redirectTo: ''
   }

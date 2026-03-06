@@ -14,6 +14,10 @@ This document provides comprehensive documentation for SocialAi's core features,
 6. [Social Graph](#social-graph)
 7. [Search & Discovery](#search--discovery)
 8. [Admin Console](#admin-console)
+9. [Auto-Config Engine](#auto-config-engine)
+10. [Daily Suggestions](#daily-suggestions)
+11. [SmartBrain Live Status](#smartbrain-live-status)
+12. [Smart Contract Integration](#smart-contract-integration)
 
 ---
 
@@ -959,10 +963,104 @@ Coming soon...
 
 ## Admin Console
 
-Coming soon...
+The Admin Console (`apps/admin`) is an Angular 19 SPA with the following views:
+
+- **Dashboard** — overview of worker health, sync status, and recent activity
+- **Workers** — per-worker status, heartbeat, error counts, and restart controls
+- **SmartBrain Console** — embedding queue depth, error rate, analysis controls
+- **Config** — read-only view of settings and feature flags
+- **Suggestions** — list, filter, accept, or reject auto-config suggestions
+- **Contracts** — RPC endpoint health and on-chain integration status
+- **Feature Flags** — toggle feature flags
+- **Sync Controls** — manual sync triggers
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: February 2026  
+## Auto-Config Engine
+
+The AutoConfig Engine (`node/autoConfig.engine.js`) monitors runtime metrics and produces ranked configuration improvement suggestions without making direct changes.
+
+### How it works
+
+1. Reads settings and feature flags from the database
+2. Collects metrics from the WorkerManager (error rates, queue depths)
+3. Evaluates rules to identify potential issues
+4. Produces `Suggestion` objects with proposed changes and confidence scores
+5. Persists suggestions to the `config_suggestions` database table
+6. Runs automatically every 24 hours via a `setInterval` job in the orchestrator
+
+### Suggestion Rules
+
+| Rule | Trigger | Proposed Change |
+|------|---------|-----------------|
+| `worker_health` | Error rate > 20% | Enable auto-test mode |
+| `db_capacity` | DB connections > 80% | Increase sync interval |
+| `ai_scaling` | Embedding queue > 100 | Reduce AI worker interval |
+| `system_restart` | All workers unhealthy | Restart all workers |
+
+### API
+
+- `GET /api/config/suggestions` — list all suggestions (filter with `?status=new|accepted|rejected`)
+- `POST /api/config/suggestions/:id/accept` — mark suggestion as accepted
+- `POST /api/config/suggestions/:id/reject` — mark suggestion as rejected
+
+---
+
+## Daily Suggestions
+
+The public dashboard (`/dashboard`) displays the top 5 current config suggestions as a "Daily Insights" panel, fetched from `GET /api/config/suggestions`. Each insight shows:
+
+- Type label
+- Description
+- Confidence bar
+
+The admin Suggestions view (`/suggestions`) provides full management with accept/reject actions.
+
+---
+
+## SmartBrain Live Status
+
+The `GET /api/smartbrain/status` endpoint exposes live AI queue metrics:
+
+```json
+{
+  "embeddings_queue_depth": 12,
+  "last_run_at": "2026-03-06T11:00:00.000Z",
+  "avg_processing_time": null,
+  "error_rate": 0,
+  "enabled": true
+}
+```
+
+This endpoint is:
+- Used by the public dashboard gauge
+- Used by the admin SmartBrain Console for detailed metrics
+- Derived from the `embeddings` table and `feature_flags` table
+
+---
+
+## Smart Contract Integration
+
+The Contracts Adapter (`node/contracts.adapter.js`) provides a bridge to on-chain identity, claims, and reputation data.
+
+### Current capabilities (mock/stub)
+
+- `getIdentityClaims(address)` — returns DB claims + mock on-chain data
+- `getOnChainReputation(address)` — deterministic mock score (0–100)
+- `verifyProof(payload)` — validates payload structure, returns mock result
+- `getChainHealth()` — pings configured RPC endpoints
+
+### API endpoints
+
+- `GET /api/contracts/health` — RPC endpoint health check
+- `GET /api/contracts/claims/:address` — identity claims for an address
+
+### Full implementation path
+
+See [SMARTCONTRACTS_AUDIT.md](SMARTCONTRACTS_AUDIT.md) for the complete integration roadmap, threat model, and audit checklist.
+
+---
+
+**Document Version**: 1.1
+**Last Updated**: March 2026
 **Status**: Complete

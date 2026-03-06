@@ -503,6 +503,122 @@ Restart a specific worker (Admin only).
 
 ---
 
+## SmartBrain Status
+
+### GET /api/smartbrain/status
+
+Returns live AI queue metrics and SmartBrain health.
+
+**Response:**
+```json
+{
+  "embeddings_queue_depth": 12,
+  "last_run_at": "2026-03-06T11:00:00.000Z",
+  "avg_processing_time": null,
+  "error_rate": 0,
+  "enabled": true
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `embeddings_queue_depth` | number | Number of pending embeddings (rows without a vector) |
+| `last_run_at` | string \| null | ISO timestamp of the last embedding created |
+| `avg_processing_time` | number \| null | Average processing time in ms (null if not tracked) |
+| `error_rate` | number | Error rate 0–1 |
+| `enabled` | boolean | Whether `ai_summaries` feature flag is enabled |
+
+---
+
+## Config Suggestions
+
+### GET /api/config/suggestions
+
+List all config suggestions. Optionally filter by `status`.
+
+**Query Parameters:**
+- `status` (optional) — `new`, `accepted`, or `rejected`
+
+**Response:**
+```json
+[
+  {
+    "id": "uuid",
+    "type": "ai_scaling",
+    "description": "Embedding queue depth is 150. Suggest reducing AI worker interval.",
+    "proposed_change": { "key": "ai_worker_interval_ms", "from": 60000, "to": 30000 },
+    "confidence": 0.75,
+    "status": "new",
+    "created_at": "2026-03-06T12:00:00.000Z"
+  }
+]
+```
+
+### POST /api/config/suggestions/:id/accept
+
+Mark a suggestion as accepted.
+
+**Response:** Updated suggestion object with `status: "accepted"`.
+
+**Error Responses:**
+- `404` - Suggestion not found
+
+### POST /api/config/suggestions/:id/reject
+
+Mark a suggestion as rejected.
+
+**Response:** Updated suggestion object with `status: "rejected"`.
+
+**Error Responses:**
+- `404` - Suggestion not found
+
+---
+
+## Contracts
+
+### GET /api/contracts/health
+
+Check reachability of all configured RPC endpoints.
+
+**Response:**
+```json
+{
+  "chains": [
+    { "name": "ethereum", "configured": true, "reachable": true, "latency_ms": 45 },
+    { "name": "base", "configured": true, "reachable": true, "latency_ms": 38 },
+    { "name": "solana", "configured": false, "reachable": false, "latency_ms": null }
+  ],
+  "overall_healthy": true
+}
+```
+
+**Requires:** `ETH_RPC_URL`, `BASE_RPC_URL`, `SOLANA_RPC_URL` environment variables.
+
+### GET /api/contracts/claims/:address
+
+Return identity claims for an on-chain address.
+
+**Parameters:**
+- `address` — Ethereum or Solana address
+
+**Response:**
+```json
+{
+  "db_claims": [
+    { "id": "uuid", "claim_type": "farcaster", "claim_value": "...", "verified": true }
+  ],
+  "on_chain": {
+    "address": "0xabc...",
+    "mock": true,
+    "claims": [{ "type": "farcaster", "verified": true }]
+  }
+}
+```
+
+**Note:** `on_chain.mock: true` indicates full chain reads are not yet implemented.
+
+---
+
 ## WebSocket Support
 
 WebSocket support for real-time updates is planned for future releases.

@@ -1,0 +1,59 @@
+<div class="smartbrain-view">
+  <div class="page-header">
+    <h1>🧠 SmartBrain Console</h1>
+    <p class="subtitle">AI embedding queue, analysis runs and topic clustering</p>
+  </div>
+
+  @if (loading) {
+    <div class="loading-spinner">Loading SmartBrain status…</div>
+  }
+
+  @if (error) {
+    <div class="alert alert-error">{{ error }}</div>
+  }
+
+  @if (actionMessage) {
+    <div class="alert alert-info">{{ actionMessage }}</div>
+  }
+
+  @if (!loading && status) {
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Enabled</div>
+        <div class="metric-value" [class.value-success]="status.enabled" [class.value-danger]="!status.enabled">
+          {{ status.enabled ? 'Yes' : 'No' }}
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Queue Depth</div>
+        <div class="metric-value" [class.value-warning]="status.embeddings_queue_depth > 50">
+          {{ status.embeddings_queue_depth }}
+        </div>
+        <div class="metric-sub">pending embeddings</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Error Rate</div>
+        <div class="metric-value" [class.value-danger]="status.error_rate > 0.1">
+          {{ (status.error_rate * 100).toFixed(1) }}%
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Last Run</div>
+        <div class="metric-value metric-small">{{ formatDate(status.last_run_at) }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Avg Processing Time</div>
+        <div class="metric-value">{{ status.avg_processing_time != null ? status.avg_processing_time + 'ms' : 'N/A' }}</div>
+      </div>
+    </div>
+
+    <div class="actions-section">
+      <h2>Controls</h2>
+      <div class="action-row">
+        <button class="btn btn-primary" (click)="triggerAnalysis()">▶ Re-run Analysis</button>
+        <button class="btn btn-secondary" (click)="triggerClustering()">🔵 Topic Clustering</button>
+        <button class="btn btn-secondary" (click)="triggerSentimentRefresh()">💬 Sentiment Refresh</button>
+      </div>
+    </div>
+  }
+</div>

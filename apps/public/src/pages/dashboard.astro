@@ -1,0 +1,318 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ConfigTerminal from '../components/ConfigTerminal.astro';
+
+const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
+
+// Fetch data from backend — graceful fallback on failure
+async function safeFetch(url) {
+  try {
+    const r = await fetch(url);
+    if (r.ok) return r.json();
+  } catch (_) {}
+  return null;
+}
+
+const [health, workers, smartbrain, suggestions] = await Promise.all([
+  safeFetch(`${API_URL}/health`),
+  safeFetch(`${API_URL}/api/workers/status`),
+  safeFetch(`${API_URL}/api/smartbrain/status`),
+  safeFetch(`${API_URL}/api/config/suggestions`),
+]);
+
+const workerList = workers ?? [];
+const healthyCount = workerList.filter(w => w.healthy).length;
+const totalWorkers = workerList.length;
+const syncHealthPct = totalWorkers > 0 ? Math.round((healthyCount / totalWorkers) * 100) : 0;
+
+const sb = smartbrain ?? { embeddings_queue_depth: 0, enabled: true, error_rate: 0, last_run_at: null };
+const topInsights = Array.isArray(suggestions) ? suggestions.slice(0, 5) : [];
+
+const systemStatus = health?.status === 'healthy' ? 'Healthy' : 'Degraded';
+const statusColor = health?.status === 'healthy' ? '#00ff88' : '#ff6b00';
+---
+
+<Layout title="Dashboard — SocialAi">
+  <style>
+    .page-title {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 0.25rem;
+      background: var(--gradient-neon);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .page-subtitle {
+      color: var(--color-text-muted);
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+    }
+    /* ── Gauge Grid ─────────────────────────────────────────── */
+    .gauge-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .gauge-card {
+      background: var(--glass-bg);
+      border: var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem 1.25rem;
+      backdrop-filter: var(--glass-blur);
+      box-shadow: var(--shadow-glass);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      transition: box-shadow var(--transition-base);
+    }
+    .gauge-card:hover { box-shadow: var(--glow-violet); }
+    .gauge-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-text-muted);
+    }
+    .gauge-value {
+      font-size: 2.25rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .gauge-sub {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+    }
+    /* SVG gauge arc */
+    .gauge-svg { width: 96px; height: 56px; }
+    /* ── Dashboard grid ─────────────────────────────────────── */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    @media (max-width: 768px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--glass-bg);
+      border: var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      backdrop-filter: var(--glass-blur);
+      box-shadow: var(--shadow-glass);
+    }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--color-neon-cyan);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    /* Worker status list */
+    .worker-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--color-border);
+      font-size: 0.875rem;
+    }
+    .worker-row:last-child { border-bottom: none; }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+    .dot-healthy { background: var(--color-neon-lime); box-shadow: var(--glow-lime); }
+    .dot-unhealthy { background: #ef4444; }
+    .dot-disabled { background: var(--color-text-muted); }
+    /* Insights list */
+    .insight-item {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--color-border);
+      font-size: 0.85rem;
+    }
+    .insight-item:last-child { border-bottom: none; }
+    .insight-type {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--color-neon-violet);
+      margin-bottom: 0.25rem;
+    }
+    .insight-desc { color: var(--color-text-secondary); line-height: 1.5; }
+    .confidence-bar {
+      height: 3px;
+      border-radius: var(--radius-full);
+      margin-top: 0.5rem;
+      background: var(--color-border);
+      overflow: hidden;
+    }
+    .confidence-fill {
+      height: 100%;
+      border-radius: var(--radius-full);
+      background: var(--gradient-neon);
+    }
+    .empty-state {
+      color: var(--color-text-muted);
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 1.5rem 0;
+    }
+    /* SmartBrain metrics */
+    .sb-metric {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--color-border);
+      font-size: 0.875rem;
+    }
+    .sb-metric:last-child { border-bottom: none; }
+    .sb-metric-label { color: var(--color-text-muted); }
+    .sb-metric-value { font-weight: 600; color: var(--color-neon-cyan); }
+    .system-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-healthy {
+      background: rgba(0, 255, 136, 0.15);
+      color: var(--color-neon-lime);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+      box-shadow: var(--glow-lime);
+    }
+    .badge-degraded {
+      background: rgba(255, 107, 0, 0.15);
+      color: var(--color-neon-orange);
+      border: 1px solid rgba(255, 107, 0, 0.3);
+    }
+  </style>
+
+  <h1 class="page-title">System Dashboard</h1>
+  <p class="page-subtitle">
+    Live metrics — <span style={`color: ${statusColor}`}>{systemStatus}</span>
+    <span class={`system-badge ${health?.status === 'healthy' ? 'badge-healthy' : 'badge-degraded'}`}>
+      {systemStatus}
+    </span>
+  </p>
+
+  <!-- Live gauges -->
+  <div class="gauge-grid">
+    <!-- Sync Health -->
+    <div class="gauge-card">
+      <div class="gauge-label">Sync Health</div>
+      <svg class="gauge-svg" viewBox="0 0 96 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 52 A40 40 0 0 1 88 52" stroke="#1e1e2e" stroke-width="8" stroke-linecap="round"/>
+        <path
+          d="M8 52 A40 40 0 0 1 88 52"
+          stroke={syncHealthPct >= 80 ? '#00ff88' : syncHealthPct >= 50 ? '#8b5cf6' : '#ff6b00'}
+          stroke-width="8"
+          stroke-linecap="round"
+          stroke-dasharray={`${(syncHealthPct / 100) * 126} 126`}
+        />
+        <text x="48" y="46" text-anchor="middle" fill="white" font-size="14" font-weight="800">{syncHealthPct}%</text>
+      </svg>
+      <div class="gauge-sub">{healthyCount}/{totalWorkers} workers healthy</div>
+    </div>
+
+    <!-- SmartBrain Queue -->
+    <div class="gauge-card">
+      <div class="gauge-label">SmartBrain Queue</div>
+      <div class="gauge-value" style="color: var(--color-neon-violet)">{sb.embeddings_queue_depth}</div>
+      <div class="gauge-sub">pending embeddings</div>
+    </div>
+
+    <!-- Error Rate -->
+    <div class="gauge-card">
+      <div class="gauge-label">AI Error Rate</div>
+      <div class="gauge-value" style={`color: ${sb.error_rate > 0.1 ? 'var(--color-neon-orange)' : 'var(--color-neon-lime)'}`}>
+        {(sb.error_rate * 100).toFixed(1)}%
+      </div>
+      <div class="gauge-sub">last analysis run</div>
+    </div>
+
+    <!-- Active Insights -->
+    <div class="gauge-card">
+      <div class="gauge-label">Config Insights</div>
+      <div class="gauge-value" style="color: var(--color-neon-cyan)">{topInsights.length}</div>
+      <div class="gauge-sub">pending suggestions</div>
+    </div>
+  </div>
+
+  <!-- Main content grid -->
+  <div class="dashboard-grid">
+    <!-- Worker Status -->
+    <div class="card">
+      <div class="card-title">⚙️ Worker Status</div>
+      {workerList.length === 0 && <div class="empty-state">No worker data available</div>}
+      {workerList.map(w => (
+        <div class="worker-row">
+          <span>
+            <span class={`status-dot ${w.healthy ? 'dot-healthy' : w.enabled ? 'dot-unhealthy' : 'dot-disabled'}`}></span>
+            {w.name}
+          </span>
+          <span style={`color: ${w.healthy ? 'var(--color-neon-lime)' : 'var(--color-text-muted)'}`}>
+            {w.healthy ? 'healthy' : w.enabled ? 'down' : 'disabled'}
+          </span>
+        </div>
+      ))}
+    </div>
+
+    <!-- SmartBrain Activity -->
+    <div class="card">
+      <div class="card-title">🧠 SmartBrain Activity</div>
+      <div class="sb-metric">
+        <span class="sb-metric-label">Enabled</span>
+        <span class="sb-metric-value">{sb.enabled ? 'Yes' : 'No'}</span>
+      </div>
+      <div class="sb-metric">
+        <span class="sb-metric-label">Queue Depth</span>
+        <span class="sb-metric-value">{sb.embeddings_queue_depth}</span>
+      </div>
+      <div class="sb-metric">
+        <span class="sb-metric-label">Error Rate</span>
+        <span class="sb-metric-value">{(sb.error_rate * 100).toFixed(1)}%</span>
+      </div>
+      <div class="sb-metric">
+        <span class="sb-metric-label">Last Run</span>
+        <span class="sb-metric-value">
+          {sb.last_run_at ? new Date(sb.last_run_at).toLocaleString() : 'N/A'}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Daily Insights -->
+  <div class="card" style="margin-bottom: 1.5rem">
+    <div class="card-title">💡 Daily Config Insights</div>
+    {topInsights.length === 0 && <div class="empty-state">No suggestions at the moment — system looks healthy!</div>}
+    {topInsights.map(s => (
+      <div class="insight-item">
+        <div class="insight-type">{s.type?.replace(/_/g, ' ')}</div>
+        <div class="insight-desc">{s.description}</div>
+        <div class="confidence-bar">
+          <div class="confidence-fill" style={`width: ${Math.round((s.confidence ?? 0.5) * 100)}%`}></div>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  <!-- Config Terminal -->
+  <div style="margin-bottom: 1.5rem">
+    <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--color-neon-cyan); margin-bottom: 1rem;">⌨️ Config Terminal</h2>
+    <ConfigTerminal />
+  </div>
+</Layout>
