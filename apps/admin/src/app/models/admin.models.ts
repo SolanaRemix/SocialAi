@@ -48,3 +48,42 @@ export interface ApiResponse<T> {
   message?: string;
   error?: string;
 }
+
+export interface SmartBrainStatus {
+  embeddings_queue_depth: number;
+  last_run_at: string | null;
+  avg_processing_time: number | null;
+  error_rate: number;
+  enabled: boolean;
+}
+
+export interface ConfigSuggestion {
+  id: string;
+  type: string;
+  description: string;
+  proposed_change: { key: string; from: unknown; to: unknown };
+  confidence: number;
+  status: 'new' | 'accepted' | 'rejected';
+  created_at: string;
+}
+
+export interface ChainHealth {
+  name: string;
+  configured: boolean;
+  reachable: boolean;
+  latency_ms: number | null;
+  error?: string;
+}
+
+export interface ContractsHealth {
+  chains: ChainHealth[];
+  overall_healthy: boolean;
+}
+
+export interface Setting {
+  id: string;
+  key: string;
+  value: unknown;
+  description: string;
+  updated_at: string;
+}

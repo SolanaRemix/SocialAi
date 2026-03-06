@@ -1,350 +1,232 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 
-// Return empty array for SSR mode - profiles are dynamically rendered
-export async function getStaticPaths() {
-  return [];
-}
-
 const { username } = Astro.params;
 const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
 
 let profile: any = null;
 let posts: any[] = [];
-let error = null;
+let claims: any = null;
+let error: string | null = null;
+
+async function safeFetch(url: string) {
+  try {
+    const r = await fetch(url);
+    if (r.ok) return r.json();
+  } catch (_) {}
+  return null;
+}
 
 try {
-  const profileResponse = await fetch(`${API_URL}/api/profile/${username}`);
-  if (profileResponse.ok) {
-    profile = await profileResponse.json();
-    
-    // Fetch user's posts
-    const postsResponse = await fetch(`${API_URL}/api/profile/${username}/posts?limit=20`);
-    if (postsResponse.ok) {
-      posts = await postsResponse.json();
-    }
-  } else if (profileResponse.status === 404) {
-    error = 'Profile not found';
-  } else {
-    error = 'Failed to load profile';
-  }
+  profile = await safeFetch(`${API_URL}/api/profiles/${username}`);
+  if (!profile) error = 'Profile not found';
 } catch (err) {
-  console.error('Failed to fetch profile:', err);
   error = 'Failed to connect to API';
 }
 
-const title = profile ? `${profile.displayName || profile.username} (@${username}) - SocialAi` : 'Profile Not Found';
+if (profile) {
+  const ethAddr = profile.ethereum_address;
+  if (ethAddr) {
+    claims = await safeFetch(`${API_URL}/api/contracts/claims/${ethAddr}`);
+  }
+}
+
+const title = profile
+  ? `${profile.display_name || profile.username} (@${username}) — SocialAi`
+  : 'Profile Not Found — SocialAi';
 const description = profile?.bio || `View ${username}'s profile on SocialAi`;
+
+// JSON-LD structured data
+const jsonLd = profile ? {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: profile.display_name || profile.username,
+  alternateName: `@${profile.username}`,
+  description: profile.bio || '',
+  image: profile.avatar_url || '',
+  url: `${Astro.url.origin}/profile/${username}`,
+} : null;
 ---
 
 <Layout title={title}>
   <meta slot="head" name="description" content={description} />
   <meta slot="head" property="og:title" content={title} />
   <meta slot="head" property="og:description" content={description} />
-  {profile?.avatar && <meta slot="head" property="og:image" content={profile.avatar} />}
+  {profile?.avatar_url && <meta slot="head" property="og:image" content={profile.avatar_url} />}
+  <meta slot="head" property="og:type" content="profile" />
+  {jsonLd && <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
 
   <style>
-    .profile-container {
-      max-width: 900px;
-      margin: 0 auto;
-    }
+    .profile-container { max-width: 860px; margin: 0 auto; }
+
+    /* Header card */
     .profile-header {
-      background: white;
-      border-radius: 12px;
+      background: var(--glass-bg);
+      border: var(--glass-border);
+      border-radius: var(--radius-xl);
       padding: 2rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      margin-bottom: 2rem;
+      backdrop-filter: var(--glass-blur);
+      box-shadow: var(--shadow-glass);
+      margin-bottom: 1.5rem;
     }
     .profile-top {
       display: flex;
-      gap: 2rem;
-      margin-bottom: 2rem;
-    }
-    .profile-avatar-large {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 3rem;
-      font-weight: 700;
-      color: white;
-      flex-shrink: 0;
-    }
-    .profile-main {
-      flex: 1;
-    }
-    .profile-name {
-      font-size: 2rem;
-      font-weight: 800;
-      margin-bottom: 0.5rem;
-      color: #333;
-    }
-    .profile-username {
-      font-size: 1.25rem;
-      color: #667eea;
-      font-weight: 600;
-      margin-bottom: 1rem;
-    }
-    .profile-bio {
-      color: #666;
-      line-height: 1.7;
-      margin-bottom: 1.5rem;
-    }
-    .profile-meta {
-      display: flex;
-      gap: 0.5rem;
+      gap: 1.5rem;
+      align-items: flex-start;
       flex-wrap: wrap;
-      margin-bottom: 1.5rem;
     }
-    .meta-badge {
-      background: #f0f0f0;
-      padding: 0.5rem 1rem;
-      border-radius: 20px;
-      font-size: 0.875rem;
-      color: #666;
+    .profile-avatar {
+      width: 100px; height: 100px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--color-neon-violet), var(--color-neon-cyan));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.5rem; font-weight: 700; color: #fff;
+      flex-shrink: 0;
+      box-shadow: var(--glow-violet);
+      overflow: hidden;
+    }
+    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .profile-info { flex: 1; min-width: 200px; }
+    .profile-name {
+      font-size: 1.75rem; font-weight: 800; margin-bottom: 0.25rem;
+      color: var(--color-text-primary);
+    }
+    .profile-handle {
+      font-size: 1rem; color: var(--color-neon-cyan); font-weight: 600; margin-bottom: 0.75rem;
+    }
+    .profile-bio { color: var(--color-text-secondary); line-height: 1.6; margin-bottom: 1rem; }
+    .profile-badges {
+      display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      padding: 0.25rem 0.75rem; border-radius: var(--radius-full);
+      font-size: 0.75rem; font-weight: 600;
+    }
+    .badge-verified {
+      background: rgba(0,255,136,0.12); color: var(--color-neon-lime);
+      border: 1px solid rgba(0,255,136,0.25);
+    }
+    .badge-claimed {
+      background: rgba(139,92,246,0.12); color: var(--color-neon-violet);
+      border: 1px solid rgba(139,92,246,0.25);
+    }
+    .badge-chain {
+      background: rgba(0,255,245,0.08); color: var(--color-neon-cyan);
+      border: 1px solid rgba(0,255,245,0.2);
     }
     .profile-stats {
-      display: flex;
-      gap: 2rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid #f0f0f0;
+      display: flex; gap: 2rem; padding-top: 1rem;
+      border-top: 1px solid var(--color-border);
+      flex-wrap: wrap;
     }
-    .stat-item {
-      display: flex;
-      flex-direction: column;
+    .stat { display: flex; flex-direction: column; }
+    .stat-val { font-size: 1.5rem; font-weight: 700; color: var(--color-neon-violet); }
+    .stat-lbl { font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+    /* On-chain section */
+    .onchain-card {
+      background: var(--glass-bg); border: var(--glass-border);
+      border-radius: var(--radius-lg); padding: 1.25rem 1.5rem;
+      backdrop-filter: var(--glass-blur); margin-bottom: 1.5rem;
     }
-    .stat-value {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #667eea;
+    .section-title {
+      font-size: 0.875rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--color-neon-cyan); margin-bottom: 0.75rem;
     }
-    .stat-label {
-      font-size: 0.875rem;
-      color: #999;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+    .claim-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.4rem 0; border-bottom: 1px solid var(--color-border);
+      font-size: 0.85rem;
     }
-    .timeline-header {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 1.5rem;
-      color: #333;
+    .claim-row:last-child { border-bottom: none; }
+    .claim-type { color: var(--color-text-muted); }
+    .claim-status { color: var(--color-neon-lime); font-weight: 600; }
+
+    /* Error / not found */
+    .error-card {
+      background: var(--glass-bg); border: var(--glass-border);
+      border-radius: var(--radius-xl); padding: 3rem; text-align: center;
+      backdrop-filter: var(--glass-blur);
     }
-    .timeline {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
+    .error-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+    .error-title { font-size: 1.75rem; font-weight: 800; margin-bottom: 0.75rem; color: var(--color-text-primary); }
+    .error-msg { color: var(--color-text-muted); margin-bottom: 1.5rem; }
+    .btn-back {
+      display: inline-block; padding: 0.6rem 1.5rem;
+      background: rgba(139,92,246,0.2); color: var(--color-neon-violet);
+      border: 1px solid rgba(139,92,246,0.4); border-radius: var(--radius-md);
+      text-decoration: none; font-weight: 600; font-size: 0.9rem;
+      transition: background var(--transition-fast);
     }
-    .post-card {
-      background: white;
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      transition: box-shadow 0.2s;
-    }
-    .post-card:hover {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-    }
-    .post-header {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-    }
-    .post-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      color: white;
-    }
-    .post-author {
-      flex: 1;
-    }
-    .post-author-name {
-      font-weight: 700;
-      color: #333;
-    }
-    .post-timestamp {
-      font-size: 0.875rem;
-      color: #999;
-    }
-    .post-content {
-      color: #333;
-      line-height: 1.7;
-      margin-bottom: 1rem;
-    }
-    .post-actions {
-      display: flex;
-      gap: 1.5rem;
-      padding-top: 1rem;
-      border-top: 1px solid #f0f0f0;
-    }
-    .post-action {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: #999;
-      font-size: 0.875rem;
-      font-weight: 600;
-    }
-    .error-container {
-      background: white;
-      border-radius: 12px;
-      padding: 3rem;
-      text-align: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
-    .error-icon {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-    }
-    .error-title {
-      font-size: 2rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-      color: #333;
-    }
-    .error-message {
-      color: #666;
-      margin-bottom: 2rem;
-    }
-    .btn {
-      display: inline-block;
-      padding: 0.875rem 2rem;
-      background: #667eea;
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: 600;
-      transition: background 0.2s;
-    }
-    .btn:hover {
-      background: #5568d3;
-    }
-    .empty-state {
-      text-align: center;
-      padding: 3rem;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
-    .empty-state-icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
+    .btn-back:hover { background: rgba(139,92,246,0.35); }
+
+    @media (max-width: 640px) {
+      .profile-top { flex-direction: column; align-items: center; text-align: center; }
+      .profile-badges { justify-content: center; }
+      .profile-stats { justify-content: center; }
     }
   </style>
 
   <div class="profile-container">
     {error ? (
-      <div class="error-container">
+      <div class="error-card">
         <div class="error-icon">🔍</div>
         <h1 class="error-title">Profile Not Found</h1>
-        <p class="error-message">
-          The profile @{username} doesn't exist or hasn't been claimed yet.
-        </p>
-        <a href="/profiles" class="btn">Browse Profiles</a>
+        <p class="error-msg">The profile @{username} doesn't exist or hasn't been claimed yet.</p>
+        <a href="/profiles" class="btn-back">Browse Profiles</a>
       </div>
     ) : profile ? (
       <>
         <div class="profile-header">
           <div class="profile-top">
-            <div class="profile-avatar-large">
-              {profile.avatar ? (
-                <img src={profile.avatar} alt={profile.displayName} style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" />
-              ) : (
-                profile.displayName?.[0]?.toUpperCase() || profile.username[0].toUpperCase()
-              )}
+            <div class="profile-avatar">
+              {profile.avatar_url
+                ? <img src={profile.avatar_url} alt={profile.display_name || profile.username} />
+                : (profile.display_name?.[0] || profile.username[0]).toUpperCase()
+              }
             </div>
-            <div class="profile-main">
-              <h1 class="profile-name">{profile.displayName || profile.username}</h1>
-              <div class="profile-username">@{profile.username}</div>
+            <div class="profile-info">
+              <h1 class="profile-name">{profile.display_name || profile.username}</h1>
+              <div class="profile-handle">@{profile.username}</div>
               {profile.bio && <p class="profile-bio">{profile.bio}</p>}
-              
-              {(profile.location || profile.website || profile.farcasterFid) && (
-                <div class="profile-meta">
-                  {profile.location && <span class="meta-badge">📍 {profile.location}</span>}
-                  {profile.website && <span class="meta-badge">🔗 {profile.website}</span>}
-                  {profile.farcasterFid && <span class="meta-badge">🟣 Farcaster</span>}
-                  {profile.claimed && <span class="meta-badge">✅ Claimed</span>}
-                </div>
-              )}
+
+              <div class="profile-badges">
+                {profile.verified && <span class="badge badge-verified">✅ Verified</span>}
+                {profile.claimed && <span class="badge badge-claimed">🪪 Claimed</span>}
+                {profile.twitter_handle && <span class="badge badge-chain">🐦 @{profile.twitter_handle}</span>}
+                {profile.website_url && <span class="badge badge-chain">🔗 Website</span>}
+              </div>
 
               <div class="profile-stats">
-                <div class="stat-item">
-                  <span class="stat-value">{profile.followersCount || 0}</span>
-                  <span class="stat-label">Followers</span>
+                <div class="stat">
+                  <span class="stat-val">0</span>
+                  <span class="stat-lbl">Followers</span>
                 </div>
-                <div class="stat-item">
-                  <span class="stat-value">{profile.followingCount || 0}</span>
-                  <span class="stat-label">Following</span>
+                <div class="stat">
+                  <span class="stat-val">0</span>
+                  <span class="stat-lbl">Following</span>
                 </div>
-                <div class="stat-item">
-                  <span class="stat-value">{profile.postsCount || 0}</span>
-                  <span class="stat-label">Posts</span>
+                <div class="stat">
+                  <span class="stat-val">0</span>
+                  <span class="stat-lbl">Posts</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <h2 class="timeline-header">Timeline</h2>
-        <div class="timeline">
-          {posts.length === 0 ? (
-            <div class="empty-state">
-              <div class="empty-state-icon">📝</div>
-              <h3>No posts yet</h3>
-              <p>This profile hasn't posted anything yet.</p>
-            </div>
-          ) : (
-            posts.map((post: any) => (
-              <article class="post-card">
-                <div class="post-header">
-                  <div class="post-avatar">
-                    {profile.avatar ? (
-                      <img src={profile.avatar} alt={profile.displayName} style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" />
-                    ) : (
-                      profile.displayName?.[0]?.toUpperCase() || profile.username[0].toUpperCase()
-                    )}
-                  </div>
-                  <div class="post-author">
-                    <div class="post-author-name">{profile.displayName || profile.username}</div>
-                    <div class="post-timestamp">
-                      {new Date(post.createdAt).toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'short', 
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </div>
-                  </div>
-                </div>
-                <div class="post-content">{post.content}</div>
-                {(post.likesCount > 0 || post.repliesCount > 0 || post.repostsCount > 0) && (
-                  <div class="post-actions">
-                    {post.likesCount > 0 && (
-                      <span class="post-action">❤️ {post.likesCount}</span>
-                    )}
-                    {post.repliesCount > 0 && (
-                      <span class="post-action">💬 {post.repliesCount}</span>
-                    )}
-                    {post.repostsCount > 0 && (
-                      <span class="post-action">🔄 {post.repostsCount}</span>
-                    )}
-                  </div>
-                )}
-              </article>
-            ))
-          )}
-        </div>
+        {claims?.db_claims?.length > 0 && (
+          <div class="onchain-card">
+            <div class="section-title">🔗 On-Chain Identity Claims</div>
+            {claims.db_claims.map((c: any) => (
+              <div class="claim-row">
+                <span class="claim-type">{c.claim_type}</span>
+                <span class="claim-status">{c.verified ? '✅ Verified' : '⏳ Pending'}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </>
     ) : null}
   </div>

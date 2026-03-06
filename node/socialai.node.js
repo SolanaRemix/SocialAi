@@ -9,6 +9,8 @@
  * - API Gateway (REST endpoints, auth, rate limiting)
  * - SSR Renderer (Astro SSR integration)
  * - SmartBrain Integration (AI features)
+ * - AutoConfig Engine (dynamic config suggestions)
+ * - Contracts Adapter (on-chain identity & reputation)
  */
 
 import express from 'express';
@@ -20,6 +22,8 @@ import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import dotenv from 'dotenv';
+import { AutoConfigEngine } from './autoConfig.engine.js';
+import { ContractsAdapter } from './contracts.adapter.js';
 
 // Load environment variables
 dotenv.config();
@@ -606,6 +610,108 @@ app.get('/api/ai/recommendations/:userId', async (req, res) => {
 });
 
 // ============================================================================
+// SMARTBRAIN STATUS ENDPOINT
+// ============================================================================
+
+app.get('/api/smartbrain/status', async (req, res) => {
+  try {
+    let embeddingsQueueDepth = 0;
+    let lastRunAt = null;
+    const avgProcessingTime = null;
+
+    try {
+      const queueResult = await db.query(
+        `SELECT COUNT(*) AS depth FROM embeddings WHERE embedding IS NULL`
+      );
+      embeddingsQueueDepth = parseInt(queueResult.rows[0]?.depth ?? '0', 10);
+
+      const lastResult = await db.query(
+        `SELECT created_at FROM embeddings ORDER BY created_at DESC LIMIT 1`
+      );
+      lastRunAt = lastResult.rows[0]?.created_at ?? null;
+    } catch (_) { /* table may not exist yet */ }
+
+    let enabled = true;
+    try {
+      const flagResult = await db.query(
+        `SELECT enabled FROM feature_flags WHERE flag_name = 'ai_summaries'`
+      );
+      enabled = flagResult.rows[0]?.enabled ?? true;
+    } catch (_) { /* non-fatal */ }
+
+    res.json({
+      embeddings_queue_depth: embeddingsQueueDepth,
+      last_run_at: lastRunAt,
+      avg_processing_time: avgProcessingTime,
+      error_rate: 0,
+      enabled
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================================
+// CONFIG SUGGESTIONS ENDPOINTS
+// ============================================================================
+
+app.get('/api/config/suggestions', async (req, res) => {
+  try {
+    const { status } = req.query;
+    const suggestions = await autoConfigEngine.getSuggestions(status || null);
+    res.json(suggestions);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/config/suggestions/:id/accept', async (req, res) => {
+  try {
+    const updated = await autoConfigEngine.updateSuggestionStatus(req.params.id, 'accepted');
+    if (!updated) {
+      return res.status(404).json({ error: 'Suggestion not found' });
+    }
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/config/suggestions/:id/reject', async (req, res) => {
+  try {
+    const updated = await autoConfigEngine.updateSuggestionStatus(req.params.id, 'rejected');
+    if (!updated) {
+      return res.status(404).json({ error: 'Suggestion not found' });
+    }
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================================
+// CONTRACTS ENDPOINTS
+// ============================================================================
+
+app.get('/api/contracts/health', async (req, res) => {
+  try {
+    const health = await contractsAdapter.getChainHealth();
+    res.json(health);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/contracts/claims/:address', async (req, res) => {
+  try {
+    const claims = await contractsAdapter.getIdentityClaims(req.params.address);
+    res.json(claims);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================================
 // INITIALIZATION
 // ============================================================================
 
@@ -613,6 +719,8 @@ const healdec = new HealdecEngine();
 const workerManager = new WorkerManager();
 const ssrRenderer = new SSRRenderer();
 const smartBrain = new SmartBrainIntegration();
+const autoConfigEngine = new AutoConfigEngine(db, CONFIG, workerManager);
+const contractsAdapter = new ContractsAdapter(db, process.env);
 
 async function initialize() {
   console.log('🚀 SocialAi Node Orchestrator Starting...');
@@ -625,6 +733,17 @@ async function initialize() {
   // Start workers
   await workerManager.startWorkers();
   workerManager.startHealthChecks();
+
+  // Daily auto-config suggestions job (runs every 24 hours)
+  const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+  autoConfigEngine.persistSuggestions().catch(err => {
+    console.error('⚠️  [AutoConfig] Initial suggestions failed:', err.message);
+  });
+  setInterval(() => {
+    autoConfigEngine.persistSuggestions().catch(err => {
+      console.error('⚠️  [AutoConfig] Suggestions job failed:', err.message);
+    });
+  }, TWENTY_FOUR_HOURS);
   
   // Start API server
   app.listen(CONFIG.port, () => {
