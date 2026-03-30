@@ -1,0 +1,79 @@
+/**
+ * SocialAi Design Tokens
+ * Global CSS custom properties for consistent theming.
+ */
+
+:root {
+  /* ── Color palette ─────────────────────────────────────────── */
+  --color-neon-cyan: #00fff5;
+  --color-neon-magenta: #ff00ff;
+  --color-neon-violet: #8b5cf6;
+  --color-neon-lime: #00ff88;
+  --color-neon-orange: #ff6b00;
+
+  /* ── Dark backgrounds ──────────────────────────────────────── */
+  --color-bg-base: #0a0a0f;
+  --color-bg-surface: #12121a;
+  --color-bg-elevated: #1a1a2e;
+  --color-border: #1e1e2e;
+  --color-border-glow: rgba(139, 92, 246, 0.3);
+
+  /* ── Text ──────────────────────────────────────────────────── */
+  --color-text-primary: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #475569;
+
+  /* ── Shadows / Glows ───────────────────────────────────────── */
+  --glow-cyan: 0 0 8px #00fff5, 0 0 20px rgba(0, 255, 245, 0.3);
+  --glow-magenta: 0 0 8px #ff00ff, 0 0 20px rgba(255, 0, 255, 0.3);
+  --glow-violet: 0 0 8px #8b5cf6, 0 0 20px rgba(139, 92, 246, 0.3);
+  --glow-lime: 0 0 8px #00ff88, 0 0 20px rgba(0, 255, 136, 0.3);
+  --shadow-glass: 0 4px 24px rgba(0, 0, 0, 0.4);
+
+  /* ── Glassmorphism ─────────────────────────────────────────── */
+  --glass-bg: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  --glass-blur: blur(12px);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+
+  /* ── Gradients ─────────────────────────────────────────────── */
+  --gradient-neon: linear-gradient(135deg, #00fff5 0%, #8b5cf6 50%, #ff00ff 100%);
+  --gradient-hero: linear-gradient(135deg, #0a0a0f 0%, #1a0a2e 50%, #0a0f1a 100%);
+
+  /* ── Typography ────────────────────────────────────────────── */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, 'SFMono-Regular', monospace;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+
+  /* ── Spacing ───────────────────────────────────────────────── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* ── Border radius ─────────────────────────────────────────── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* ── Transitions ───────────────────────────────────────────── */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 400ms ease;
+}

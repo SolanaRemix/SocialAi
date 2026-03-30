@@ -1,0 +1,58 @@
+<div class="suggestions-view">
+  <div class="page-header">
+    <h1>💡 Config Suggestions</h1>
+    <p class="subtitle">Auto-generated configuration improvement suggestions</p>
+  </div>
+
+  <div class="filter-row">
+    <label for="status-filter">Filter by status:</label>
+    <select id="status-filter" [(ngModel)]="filterStatus" (change)="loadSuggestions()">
+      <option value="">All</option>
+      <option value="new">New</option>
+      <option value="accepted">Accepted</option>
+      <option value="rejected">Rejected</option>
+    </select>
+  </div>
+
+  @if (loading) { <div class="loading">Loading suggestions…</div> }
+  @if (error) { <div class="alert alert-error">{{ error }}</div> }
+
+  @if (!loading && suggestions.length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon">✅</div>
+      <p>No suggestions found — system looks healthy!</p>
+    </div>
+  }
+
+  @for (s of suggestions; track s.id) {
+    <div class="suggestion-card" [class]="'status-' + s.status">
+      <div class="suggestion-top">
+        <span class="suggestion-type">{{ formatType(s.type) }}</span>
+        <span class="suggestion-status" [class]="'badge-' + s.status">{{ s.status }}</span>
+      </div>
+      <p class="suggestion-desc">{{ s.description }}</p>
+
+      <div class="change-box">
+        <span class="change-key">{{ s.proposed_change?.key }}</span>:
+        <code>{{ s.proposed_change?.from | json }}</code>
+        <span class="arrow">→</span>
+        <code>{{ s.proposed_change?.to | json }}</code>
+      </div>
+
+      <div class="suggestion-footer">
+        <div class="confidence-wrap">
+          <span class="confidence-label">Confidence: {{ confidencePct(s.confidence) }}</span>
+          <div class="confidence-bar">
+            <div class="confidence-fill" [style.width]="confidencePct(s.confidence)"></div>
+          </div>
+        </div>
+        @if (s.status === 'new') {
+          <div class="suggestion-actions">
+            <button class="btn btn-accept" (click)="accept(s.id)">✓ Accept</button>
+            <button class="btn btn-reject" (click)="reject(s.id)">✗ Reject</button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

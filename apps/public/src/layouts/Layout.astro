@@ -1,32 +1,38 @@
 ---
 // Base layout for all pages
+import '../styles/tokens.css';
 const { title = 'SocialAi - The Open Social Index' } = Astro.props;
 ---
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
     <meta name="description" content="The Open Social Index & Identity Claim Network" />
     <slot name="head" />
-    <style>
+    <style is:global>
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
       body {
-        font-family: system-ui, -apple-system, sans-serif;
+        font-family: var(--font-sans);
         line-height: 1.6;
-        color: #333;
-        background: #f5f5f5;
+        color: var(--color-text-primary);
+        background: var(--color-bg-base);
+        min-height: 100vh;
       }
       header {
-        background: #fff;
-        border-bottom: 1px solid #e0e0e0;
+        background: rgba(18, 18, 26, 0.9);
+        border-bottom: 1px solid var(--color-border);
         padding: 1rem 2rem;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        backdrop-filter: var(--glass-blur);
       }
       nav {
         max-width: 1200px;
@@ -34,45 +40,95 @@ const { title = 'SocialAi - The Open Social Index' } = Astro.props;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 1rem;
       }
-      nav h1 {
-        font-size: 1.5rem;
+      .nav-brand a {
+        font-size: 1.25rem;
         font-weight: 700;
+        text-decoration: none;
+        background: var(--gradient-neon);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
       }
-      nav ul {
+      .nav-links {
         list-style: none;
         display: flex;
-        gap: 2rem;
+        gap: 1.5rem;
+        flex-wrap: wrap;
       }
-      nav a {
-        color: #333;
+      .nav-links a {
+        color: var(--color-text-secondary);
         text-decoration: none;
         font-weight: 500;
+        font-size: 0.9rem;
+        transition: color var(--transition-fast);
       }
-      nav a:hover {
-        color: #0066cc;
+      .nav-links a:hover {
+        color: var(--color-neon-cyan);
+      }
+      /* Mobile nav toggle */
+      .nav-toggle {
+        display: none;
+        background: none;
+        border: 1px solid var(--color-border);
+        color: var(--color-text-secondary);
+        padding: 0.4rem 0.6rem;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        font-size: 1.2rem;
       }
       main {
         max-width: 1200px;
         margin: 2rem auto;
-        padding: 0 2rem;
+        padding: 0 1.5rem;
       }
       footer {
-        background: #fff;
-        border-top: 1px solid #e0e0e0;
-        padding: 2rem;
+        background: rgba(18, 18, 26, 0.8);
+        border-top: 1px solid var(--color-border);
+        padding: 1.5rem 2rem;
         text-align: center;
         margin-top: 4rem;
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+      }
+      /* Responsive: single-column on small screens */
+      @media (max-width: 640px) {
+        .nav-toggle { display: block; }
+        .nav-links {
+          display: none;
+          flex-direction: column;
+          gap: 0.75rem;
+          width: 100%;
+          padding-top: 0.75rem;
+        }
+        .nav-links.open { display: flex; }
+        nav { flex-wrap: wrap; }
+        main { padding: 0 1rem; }
       }
     </style>
+    <script>
+      // Mobile nav toggle
+      document.addEventListener('DOMContentLoaded', () => {
+        const toggle = document.getElementById('nav-toggle');
+        const links = document.getElementById('nav-links');
+        if (toggle && links) {
+          toggle.addEventListener('click', () => links.classList.toggle('open'));
+        }
+      });
+    </script>
   </head>
   <body>
     <header>
       <nav>
-        <h1><a href="/">🌐 SocialAi</a></h1>
-        <ul>
+        <div class="nav-brand">
+          <a href="/">⚡ SocialAi</a>
+        </div>
+        <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-links" id="nav-links">
           <li><a href="/">Home</a></li>
           <li><a href="/profiles">Profiles</a></li>
+          <li><a href="/dashboard">Dashboard</a></li>
           <li><a href="/timeline">Timeline</a></li>
           <li><a href="/claim">Claim Profile</a></li>
         </ul>
@@ -84,7 +140,7 @@ const { title = 'SocialAi - The Open Social Index' } = Astro.props;
     </main>
     
     <footer>
-      <p>&copy; {new Date().getFullYear()} SocialAi - The Open Social Index</p>
+      <p>&copy; {new Date().getFullYear()} SocialAi — The Open Social Index</p>
     </footer>
   </body>
 </html>

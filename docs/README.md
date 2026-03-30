@@ -20,11 +20,25 @@ Welcome to the comprehensive documentation for **SocialAi**, the open social ind
 - [Auto Test](FEATURES.md#auto-test) - Automated health checking and validation
 - [Auto Analysis](FEATURES.md#auto-analysis) - AI-powered content analysis and insights
 - [Auto Fix](FEATURES.md#auto-fix) - Self-healing system recovery and maintenance
+- [Auto-Config Engine](FEATURES.md#auto-config-engine) - Dynamic configuration suggestion engine
+- [Daily Suggestions](FEATURES.md#daily-suggestions) - Scheduled config improvement insights
+- [SmartBrain Live Status](FEATURES.md#smartbrain-live-status) - Real-time AI queue and health metrics
+- [Smart Contract Integration](FEATURES.md#smart-contract-integration) - On-chain identity and reputation
 
 ### Advanced Topics
 - [Worker System](WORKERS.md) - Parallel worker orchestration and management
 - [Healdec Engine](HEALDEC.md) - Auto-healing engine documentation
 - [SmartBrain Integration](SMARTBRAIN.md) - AI features and embeddings
+- [Smart Contracts Audit](SMARTCONTRACTS_AUDIT.md) - Contract roles, threat model, and audit checklist
+
+### New UI Features
+- **Public Dashboard** (`/dashboard`) - Live gauges, worker status, SmartBrain activity, daily insights
+- **Config Terminal** (embedded in dashboard) - Interactive neon terminal for backend commands
+- **Profile Pages** (`/profile/:username`) - SEO-optimized profiles with on-chain badges
+- **Admin SmartBrain Console** (`/smartbrain`) - Queue depth, error rate, analysis controls
+- **Admin Config View** (`/config`) - Settings and feature flags
+- **Admin Suggestions** (`/suggestions`) - Review and act on auto-config suggestions
+- **Admin Contracts** (`/contracts`) - RPC endpoint health and chain integration status
 
 ### Operations
 - Deployment Guide - Production deployment instructions

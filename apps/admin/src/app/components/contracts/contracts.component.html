@@ -1,0 +1,45 @@
+<div class="contracts-view">
+  <div class="page-header">
+    <h1>🔗 Contracts &amp; Chain Health</h1>
+    <p class="subtitle">RPC endpoint health and on-chain integration status</p>
+  </div>
+
+  @if (loading) { <div class="loading">Loading chain health…</div> }
+  @if (error) { <div class="alert alert-error">{{ error }}</div> }
+
+  @if (!loading && health) {
+    <div class="overall-badge" [class.badge-healthy]="health.overall_healthy" [class.badge-degraded]="!health.overall_healthy">
+      {{ health.overall_healthy ? '✅ All chains healthy' : '⚠️ Some chains degraded' }}
+    </div>
+
+    <div class="chains-grid">
+      @for (chain of health.chains; track chain.name) {
+        <div class="chain-card" [class.chain-reachable]="chain.reachable" [class.chain-down]="chain.configured && !chain.reachable">
+          <div class="chain-header">
+            <span class="chain-icon">{{ statusIcon(chain) }}</span>
+            <span class="chain-name">{{ chain.name | titlecase }}</span>
+          </div>
+          <div class="chain-row">
+            <span class="row-label">Status</span>
+            <span class="row-val" [class.val-ok]="chain.reachable" [class.val-err]="chain.configured && !chain.reachable">
+              {{ !chain.configured ? 'Not configured' : chain.reachable ? 'Reachable' : 'Unreachable' }}
+            </span>
+          </div>
+          <div class="chain-row">
+            <span class="row-label">Latency</span>
+            <span class="row-val">{{ latencyLabel(chain) }}</span>
+          </div>
+          @if (chain.error) {
+            <div class="chain-error">{{ chain.error }}</div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="note-box">
+      <strong>Note:</strong> Full on-chain read/write integration requires RPC URLs configured via environment variables
+      (<code>ETH_RPC_URL</code>, <code>BASE_RPC_URL</code>, <code>SOLANA_RPC_URL</code>).
+      See <code>docs/SMARTCONTRACTS_AUDIT.md</code> for the full integration roadmap.
+    </div>
+  }
+</div>

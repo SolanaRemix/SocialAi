@@ -165,3 +165,14 @@ INSERT INTO settings (key, value, description) VALUES
     ('rate_limit', '{"requests_per_minute": 100}', 'API rate limiting configuration'),
     ('maintenance_mode', '{"enabled": false}', 'System maintenance mode flag')
 ON CONFLICT (key) DO NOTHING;
+
+-- Config suggestions table (auto-config engine output)
+CREATE TABLE IF NOT EXISTS config_suggestions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    type VARCHAR(50) NOT NULL,
+    description TEXT NOT NULL,
+    proposed_change JSONB NOT NULL,
+    confidence DECIMAL(3,2) DEFAULT 0.5,
+    status VARCHAR(20) DEFAULT 'new'
+);

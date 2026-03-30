@@ -1,0 +1,40 @@
+.smartbrain-view { padding: 0; }
+.page-header { margin-bottom: 1.5rem; }
+.page-header h1 { font-size: 1.75rem; font-weight: 700; color: var(--text-primary); }
+.subtitle { color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem; }
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.metric-card {
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 1.25rem;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.metric-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.5rem; }
+.metric-value { font-size: 1.75rem; font-weight: 800; color: var(--primary-color); line-height: 1; }
+.metric-small { font-size: 0.875rem; font-weight: 600; }
+.metric-sub { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem; }
+
+.value-success { color: var(--success-color) !important; }
+.value-warning { color: var(--warning-color) !important; }
+.value-danger { color: var(--danger-color) !important; }
+
+.actions-section h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-primary); }
+.action-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.btn { padding: 0.55rem 1.25rem; border-radius: 8px; font-weight: 600; font-size: 0.875rem; cursor: pointer; border: none; transition: opacity 0.15s; }
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: var(--primary-color); color: #fff; }
+.btn-secondary { background: var(--background); color: var(--text-primary); border: 1px solid var(--border-color); }
+
+.loading-spinner { text-align: center; padding: 2rem; color: var(--text-secondary); }
+.alert { padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.875rem; }
+.alert-error { background: rgba(239,68,68,0.1); color: var(--danger-color); border: 1px solid rgba(239,68,68,0.25); }
+.alert-info { background: rgba(99,102,241,0.1); color: var(--primary-color); border: 1px solid rgba(99,102,241,0.25); }
+
+@media (max-width: 600px) { .metrics-grid { grid-template-columns: 1fr 1fr; } }

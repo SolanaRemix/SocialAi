@@ -1,0 +1,279 @@
+---
+// ConfigTerminal — neon terminal-style command interface
+// Supported commands: help, show config, show workers, show smartbrain, test health
+const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000';
+---
+
+<div class="terminal-wrapper">
+  <div class="terminal-header">
+    <div class="terminal-dots">
+      <span class="dot dot-red"></span>
+      <span class="dot dot-yellow"></span>
+      <span class="dot dot-green"></span>
+    </div>
+    <span class="terminal-title">SocialAi Config Terminal</span>
+  </div>
+  <div class="terminal-body" id="terminal-output">
+    <div class="terminal-line">
+      <span class="prompt">$</span>
+      <span class="output"> SocialAi Config Terminal v1.0 — type <kbd>help</kbd> for commands</span>
+    </div>
+  </div>
+  <div class="terminal-input-row">
+    <span class="prompt">$&gt;</span>
+    <input
+      type="text"
+      id="terminal-input"
+      class="terminal-input"
+      placeholder="enter command..."
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <button id="terminal-run" class="run-btn">▶</button>
+  </div>
+</div>
+
+<style>
+  .terminal-wrapper {
+    background: #0a0a0f;
+    border: 1px solid rgba(0,255,245,0.2);
+    border-radius: var(--radius-lg, 12px);
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(0,255,245,0.08), var(--shadow-glass, 0 4px 24px rgba(0,0,0,0.4));
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    max-width: 760px;
+  }
+  .terminal-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 1rem;
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .terminal-dots { display: flex; gap: 6px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-red { background: #ff5f56; }
+  .dot-yellow { background: #ffbd2e; }
+  .dot-green { background: #27c93f; }
+  .terminal-title {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 0.05em;
+    flex: 1;
+    text-align: center;
+  }
+  .terminal-body {
+    padding: 1rem;
+    min-height: 240px;
+    max-height: 400px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+  }
+  .terminal-line {
+    display: flex;
+    gap: 0.5rem;
+    line-height: 1.5;
+    flex-wrap: wrap;
+  }
+  .prompt { color: #00fff5; font-weight: 700; flex-shrink: 0; }
+  .output { color: #94a3b8; white-space: pre-wrap; word-break: break-word; }
+  .output.success { color: #00ff88; }
+  .output.error { color: #ff5f56; }
+  .output.info { color: #8b5cf6; }
+  .output.cmd { color: #e2e8f0; }
+  kbd {
+    background: rgba(0,255,245,0.1);
+    color: #00fff5;
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.9em;
+    border: 1px solid rgba(0,255,245,0.2);
+  }
+  .terminal-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.02);
+  }
+  .terminal-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #e2e8f0;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.875rem;
+    caret-color: #00fff5;
+  }
+  .terminal-input::placeholder { color: rgba(255,255,255,0.2); }
+  .run-btn {
+    background: rgba(0,255,245,0.1);
+    border: 1px solid rgba(0,255,245,0.25);
+    color: #00fff5;
+    border-radius: 4px;
+    padding: 0.25rem 0.6rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.15s;
+  }
+  .run-btn:hover { background: rgba(0,255,245,0.2); }
+
+  /* Blinking cursor animation */
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  .cursor {
+    display: inline-block;
+    width: 8px; height: 1em;
+    background: #00fff5;
+    animation: blink 1s step-end infinite;
+    vertical-align: text-bottom;
+  }
+</style>
+
+<script define:vars={{ apiUrl: API_URL }}>
+  const output = document.getElementById('terminal-output');
+  const input = document.getElementById('terminal-input');
+  const runBtn = document.getElementById('terminal-run');
+  const history = [];
+  let historyIdx = -1;
+
+  function addLine(text, cls = '') {
+    const line = document.createElement('div');
+    line.className = 'terminal-line';
+    const span = document.createElement('span');
+    span.className = `output ${cls}`;
+    span.textContent = text;
+    line.appendChild(span);
+    output.appendChild(line);
+    output.scrollTop = output.scrollHeight;
+  }
+
+  function addCmd(cmd) {
+    const line = document.createElement('div');
+    line.className = 'terminal-line';
+    line.innerHTML = `<span class="prompt">$&gt;</span><span class="output cmd"> ${escapeHtml(cmd)}</span>`;
+    output.appendChild(line);
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  const HELP_TEXT = `Available commands:
+  help              — show this message
+  show config       — display current API config
+  show workers      — list worker statuses
+  show smartbrain   — SmartBrain status
+  test health       — ping /health endpoint
+  clear             — clear terminal`;
+
+  async function runCommand(cmd) {
+    const c = cmd.trim().toLowerCase();
+    addCmd(cmd.trim());
+    if (!c) return;
+
+    if (c === 'help') {
+      addLine(HELP_TEXT, 'info');
+      return;
+    }
+    if (c === 'clear') {
+      output.innerHTML = '';
+      return;
+    }
+    if (c === 'test health') {
+      addLine('→ Fetching /health...', 'info');
+      try {
+        const r = await fetch(`${apiUrl}/health`);
+        const data = await r.json();
+        addLine(JSON.stringify(data, null, 2), r.ok ? 'success' : 'error');
+      } catch (e) {
+        addLine(`✗ Connection failed: ${e.message}`, 'error');
+      }
+      return;
+    }
+    if (c === 'show workers') {
+      addLine('→ Fetching /api/workers/status...', 'info');
+      try {
+        const r = await fetch(`${apiUrl}/api/workers/status`);
+        const data = await r.json();
+        if (Array.isArray(data)) {
+          data.forEach(w => {
+            const status = w.healthy ? '✓ healthy' : w.enabled ? '✗ down' : '— disabled';
+            addLine(`  ${w.name.padEnd(14)} ${status}`, w.healthy ? 'success' : 'error');
+          });
+        } else {
+          addLine(JSON.stringify(data, null, 2), 'info');
+        }
+      } catch (e) {
+        addLine(`✗ ${e.message}`, 'error');
+      }
+      return;
+    }
+    if (c === 'show smartbrain') {
+      addLine('→ Fetching /api/smartbrain/status...', 'info');
+      try {
+        const r = await fetch(`${apiUrl}/api/smartbrain/status`);
+        const data = await r.json();
+        addLine(JSON.stringify(data, null, 2), r.ok ? 'success' : 'error');
+      } catch (e) {
+        addLine(`✗ ${e.message}`, 'error');
+      }
+      return;
+    }
+    if (c === 'show config') {
+      addLine('→ Fetching /api/settings and /api/feature-flags...', 'info');
+      try {
+        const [settingsRes, flagsRes] = await Promise.all([
+          fetch(`${apiUrl}/api/settings`),
+          fetch(`${apiUrl}/api/feature-flags`),
+        ]);
+        const settings = await settingsRes.json();
+        const flags = await flagsRes.json();
+        addLine('--- Settings ---', 'info');
+        addLine(JSON.stringify(settings, null, 2), 'success');
+        addLine('--- Feature Flags ---', 'info');
+        addLine(JSON.stringify(flags, null, 2), 'success');
+      } catch (e) {
+        addLine(`✗ ${e.message}`, 'error');
+      }
+      return;
+    }
+
+    addLine(`✗ Unknown command: "${cmd.trim()}". Type help for usage.`, 'error');
+  }
+
+  input.addEventListener('keydown', async (e) => {
+    if (e.key === 'Enter') {
+      const cmd = input.value;
+      history.unshift(cmd);
+      historyIdx = -1;
+      input.value = '';
+      await runCommand(cmd);
+    } else if (e.key === 'ArrowUp') {
+      historyIdx = Math.min(historyIdx + 1, history.length - 1);
+      input.value = history[historyIdx] || '';
+      e.preventDefault();
+    } else if (e.key === 'ArrowDown') {
+      historyIdx = Math.max(historyIdx - 1, -1);
+      input.value = historyIdx >= 0 ? history[historyIdx] : '';
+      e.preventDefault();
+    }
+  });
+
+  runBtn.addEventListener('click', async () => {
+    const cmd = input.value;
+    history.unshift(cmd);
+    historyIdx = -1;
+    input.value = '';
+    await runCommand(cmd);
+  });
+
+  // Focus terminal on click
+  document.querySelector('.terminal-wrapper')?.addEventListener('click', () => input.focus());
+</script>
